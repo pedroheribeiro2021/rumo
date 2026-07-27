@@ -1,5 +1,43 @@
 # Registro de Sessões — Rumo
 
+## 2026-07-27 (noite, cont.) — Sprint 2: Orçamento + Roteiro
+
+**Objetivo:** implementar Orçamento e Roteiro seguindo `docs/Guia-Proximos-Passos.md`.
+
+**Alterações:**
+- `useBudget.ts` (`useBudgetItems`, `useCreateBudgetItem`, `useDeleteBudgetItem`)
+  e `BudgetPage.tsx`: cards de total gasto/planejado, lista por categoria com
+  `ProgressBar` (tom muda pra warn/bad conforme o gasto se aproxima ou passa
+  do planejado), cruzando `rumo_budget_items` com a soma de `rumo_expenses`
+  por categoria (client-side, mesma abordagem do acerto de contas).
+- `useItinerary.ts` (`useItineraryDays`, `useCreateItineraryDay`,
+  `useDeleteItineraryDay`) e `ItineraryPage.tsx`: lista de dias ordenada por
+  data, cada um com cidade/país/notas, seguindo o layout do
+  `design-system/ui_kits/rumo-app/ItineraryScreen.jsx`.
+- Categorias de gasto extraídas para `web/src/lib/categories.ts`
+  (`EXPENSE_CATEGORIES`) — reusadas no formulário de gasto e no seletor de
+  categoria do orçamento, garantindo que o cruzamento planejado×real bata.
+- Formatação de moeda extraída para `web/src/lib/format.ts` (estava
+  duplicada só em `ExpensesPage`).
+- `TripDetailPage`: os 3 módulos (Gastos/Orçamento/Roteiro) agora aparecem
+  como botões lado a lado, no lugar do botão único "Ver gastos".
+- Novas rotas `/trips/:tripId/orcamento` e `/trips/:tripId/roteiro`.
+
+**Validado ponta a ponta no navegador:** criei um item de orçamento
+(alimentação, R$300 planejado) e confirmei que cruzou certo com o gasto
+real de R$150 já lançado (barra em 50%); adicionei um dia de roteiro
+(Foz do Iguaçu · Brasil) e confirmei a listagem.
+
+**Pendências:** ver `Pendencias.md`.
+
+**Arquivos modificados:** `web/src/hooks/{useBudget,useItinerary}.ts` (novo),
+`web/src/pages/{BudgetPage,ItineraryPage}.tsx` (novo),
+`web/src/lib/{categories,format}.ts` (novo), `web/src/lib/types.ts`,
+`web/src/pages/{ExpensesPage,TripDetailPage}.tsx`, `web/src/App.tsx`,
+`docs/roadmap.md`, `Pendencias.md`, `Registro-de-Sessoes.md`.
+
+---
+
 ## 2026-07-27 (noite) — Login corrigido (e-mail+senha) e validação completa
 
 **Objetivo:** resolver de vez o problema de login antes de avançar pra

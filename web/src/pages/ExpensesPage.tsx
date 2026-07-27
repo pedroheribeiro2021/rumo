@@ -6,17 +6,9 @@ import { equalSplit, useCreateExpense, useDeleteExpense, useExpenses, type Expen
 import { useAuth } from '../contexts/AuthContext'
 import { computeSettlement, type MemberBalance } from '../lib/settlement'
 import { fetchFxRate } from '../lib/fx'
+import { formatMoney as money } from '../lib/format'
+import { EXPENSE_CATEGORIES as CATEGORIES } from '../lib/categories'
 import { Button, Card, CurrencySelect, EmptyState, Fab, Input, LoadingState, Modal } from '../components/ui'
-
-const CATEGORIES = ['alimentação', 'transporte', 'hospedagem', 'passeio', 'compras', 'outros']
-
-function money(value: number, currency: string) {
-  try {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(value)
-  } catch {
-    return `${currency} ${value.toFixed(2)}`
-  }
-}
 
 export function ExpensesPage() {
   const { tripId } = useParams<{ tripId: string }>()

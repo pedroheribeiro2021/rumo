@@ -14,3 +14,9 @@ export type ExpenseSplit = Tables<'rumo_expense_splits'>
 export type ExpenseSplitInsert = TablesInsert<'rumo_expense_splits'>
 
 export type Profile = Tables<'rumo_profiles'>
+
+export type BudgetItem = Tables<'rumo_budget_items'>
+export type BudgetItemInsert = TablesInsert<'rumo_budget_items'>
+
+export type ItineraryDay = Tables<'rumo_itinerary_days'>
+export type ItineraryDayInsert = TablesInsert<'rumo_itinerary_days'>

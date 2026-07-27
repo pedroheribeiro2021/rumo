@@ -8,6 +8,8 @@ import { LoginPage } from './pages/LoginPage'
 import { TripsPage } from './pages/TripsPage'
 import { TripDetailPage } from './pages/TripDetailPage'
 import { ExpensesPage } from './pages/ExpensesPage'
+import { BudgetPage } from './pages/BudgetPage'
+import { ItineraryPage } from './pages/ItineraryPage'
 
 function App() {
   return (
@@ -42,6 +44,26 @@ function App() {
                 <RequireAuth>
                   <AppLayout>
                     <ExpensesPage />
+                  </AppLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/trips/:tripId/orcamento"
+              element={
+                <RequireAuth>
+                  <AppLayout>
+                    <BudgetPage />
+                  </AppLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/trips/:tripId/roteiro"
+              element={
+                <RequireAuth>
+                  <AppLayout>
+                    <ItineraryPage />
                   </AppLayout>
                 </RequireAuth>
               }

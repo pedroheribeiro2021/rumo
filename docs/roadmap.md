@@ -11,8 +11,8 @@
 - [ ] Divisão de despesa (igual/custom) + acerto de contas.
 
 ## Sprint 2 — Planejamento
-- [ ] Orçamento por categoria (planejado vs real).
-- [ ] Roteiro dia a dia.
+- [x] Orçamento por categoria (planejado vs real).
+- [x] Roteiro dia a dia.
 
 ## Sprint 3 — Passagens & polish
 - [ ] Monitor de passagens (watches + observations + gráfico).

@@ -28,16 +28,23 @@ export function TripDetailPage() {
         ← Viagens
       </Link>
 
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginTop: 6 }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 'var(--text-h1)', color: 'var(--color-text-primary)' }}>{trip.name}</h1>
-          <p style={{ margin: '4px 0 0', color: 'var(--color-text-secondary)', fontSize: 'var(--text-body-sm)' }}>
-            {trip.destination ? `${trip.destination} · ` : ''}
-            {trip.start_date ?? '?'} a {trip.end_date ?? '?'} · moeda base {trip.base_currency}
-          </p>
-        </div>
+      <div style={{ marginTop: 6 }}>
+        <h1 style={{ margin: 0, fontSize: 'var(--text-h1)', color: 'var(--color-text-primary)' }}>{trip.name}</h1>
+        <p style={{ margin: '4px 0 0', color: 'var(--color-text-secondary)', fontSize: 'var(--text-body-sm)' }}>
+          {trip.destination ? `${trip.destination} · ` : ''}
+          {trip.start_date ?? '?'} a {trip.end_date ?? '?'} · moeda base {trip.base_currency}
+        </p>
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
         <Link to={`/trips/${trip.id}/gastos`}>
-          <Button>Ver gastos</Button>
+          <Button>Gastos</Button>
+        </Link>
+        <Link to={`/trips/${trip.id}/orcamento`}>
+          <Button variant="secondary">Orçamento</Button>
+        </Link>
+        <Link to={`/trips/${trip.id}/roteiro`}>
+          <Button variant="secondary">Roteiro</Button>
         </Link>
       </div>
 

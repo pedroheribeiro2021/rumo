@@ -14,10 +14,8 @@ Magic link trocado por e-mail + senha (ADR 0004) depois que o scanner de e-mail 
 ## Design system — feito (2026-07-27 tarde)
 Integrado a partir do export do Claude Design. Tokens em `web/src/styles/tokens/` + `@theme` em `web/src/index.css`; 16 componentes em `web/src/components/ui/`; as 4 páginas existentes já usam os componentes novos. Fonte visual original preservada em `design-system/`. Ver ADR 0003. **Toda tela nova (Sprint 2 em diante) deve puxar de `web/src/components/ui/`, não estilizar com classes Tailwind soltas.**
 
-## Sprint 2 — Núcleo de planejamento
-Seguir os padrões já existentes (hook react-query + `supabase` client + página/seção em `TripDetailPage`).
-- **Orçamento** (`rumo_budget_items`): hook `useBudget(tripId)` (CRUD por categoria); UI de planejado vs. real cruzando com a soma de `rumo_expenses` por categoria. Reusar `fmt`/moeda base da viagem.
-- **Roteiro** (`rumo_itinerary_days`): hook `useItinerary(tripId)`; lista dia a dia ordenada por `sort_order`/`day_date`, com base_city, país e notas. CRUD simples.
+## Sprint 2 — feito (2026-07-27 noite)
+Orçamento (`useBudget.ts`, `BudgetPage.tsx`) e Roteiro (`useItinerary.ts`, `ItineraryPage.tsx`) implementados e validados no navegador. Rotas `/trips/:tripId/{orcamento,roteiro}`, linkadas em `TripDetailPage`. Categorias compartilhadas em `web/src/lib/categories.ts` para o cruzamento planejado×real funcionar.
 
 ## Sprint 3 — Passagens e polish
 - **Monitor de passagens** (`rumo_price_watches`, `rumo_price_observations`): hook + tela com alvo, trechos e histórico (gráfico). **Limitação honesta:** milhas não são scrapáveis; alimentar preços em dinheiro (entrada manual e/ou a tarefa agendada do Cowork que já existe) e usar rastreamento nativo do Google Voos como rede de segurança. Toda função `SECURITY DEFINER` nova segue o padrão do ADR 0002 (`set search_path`, `revoke from public`, grant explícito).
