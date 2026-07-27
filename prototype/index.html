@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gestor de Viagem — Foz + Paraguai + Argentina</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+:root{ color-scheme: light; --bg:#f6f7f9; --card:#ffffff; --ink:#1a2230; --mut:#67707f; --line:#e6e9ee; --brand:#0b6b5b; --brand2:#0e8f79; --accent:#e8a13a; --good:#178a53; --warn:#c9761a; --bad:#c0392b; --chip:#eef4f2; }
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:18px}
+h1{font-size:20px;margin:0 0 2px}
+h2{font-size:15px;margin:0 0 12px;letter-spacing:.02em;text-transform:uppercase;color:var(--brand)}
+.sub{color:var(--mut);font-size:13px;margin:0 0 16px}
+.wrap{max-width:920px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px;box-shadow:0 1px 2px rgba(20,30,50,.04)}
+.row{display:flex;gap:14px;flex-wrap:wrap}
+.kpi{flex:1;min-width:150px;background:var(--chip);border-radius:12px;padding:12px 14px}
+.kpi .n{font-size:22px;font-weight:700}
+.kpi .l{font-size:12px;color:var(--mut)}
+.hero{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.badge{display:inline-block;background:var(--brand);color:#fff;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{color:var(--mut);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.tag{font-size:11px;padding:2px 8px;border-radius:999px;font-weight:600}
+.t-good{background:#e2f3ea;color:var(--good)}
+.t-warn{background:#fbeed6;color:var(--warn)}
+.t-bad{background:#f8e2df;color:var(--bad)}
+.legs{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.leg{border:1px solid var(--line);border-radius:12px;padding:12px}
+.leg .rt{font-weight:700;font-size:14px}
+.leg .dt{font-size:12px;color:var(--mut)}
+.leg .pr{font-size:20px;font-weight:700;margin-top:6px}
+input,select{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink)}
+button{font:inherit;font-weight:600;background:var(--brand);color:#fff;border:0;border-radius:9px;padding:9px 14px;cursor:pointer}
+button.ghost{background:#fff;color:var(--brand);border:1px solid var(--brand)}
+.form{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.tab{padding:8px 14px;border-radius:999px;background:#fff;border:1px solid var(--line);cursor:pointer;font-weight:600;font-size:13px;color:var(--mut)}
+.tab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+.hide{display:none}
+.mut{color:var(--mut)}
+.day{display:flex;gap:12px;padding:8px 0;border-bottom:1px dashed var(--line)}
+.day .d{min-width:52px;font-weight:700;color:var(--brand2)}
+.flag{font-size:12px;color:var(--mut)}
+.note{font-size:12px;color:var(--mut);margin-top:8px;line-height:1.5}
+.chartbox{position:relative;height:260px;margin-top:8px}
+.calc{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+a{color:var(--brand2)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="card hero">
+    <div>
+      <span class="badge">Roteiro V2 · Casal · ~10 dias</span>
+      <h1 style="margin-top:8px">Foz do Iguaçu + Paraguai + Argentina + Buenos Aires</h1>
+      <p class="sub">Saída 30 ou 31/10/2026 · volta ~09–11/11 · BSB → IGU → (IGR→BUE) → BSB</p>
+    </div>
+    <div style="text-align:right">
+      <div id="countdown" style="font-size:30px;font-weight:800;color:var(--brand)">—</div>
+      <div class="l mut">dias até a ida</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-t="monitor">💸 Monitor de preços</div>
+    <div class="tab" data-t="roteiro">🗺️ Roteiro</div>
+    <div class="tab" data-t="orcamento">📊 Orçamento</div>
+    <div class="tab" data-t="milhas">✈️ Calculadora de milhas</div>
+  </div>
+
+  <section id="monitor">
+    <div class="card">
+      <h2>Alvo de preço</h2>
+      <div class="row">
+        <div class="kpi"><div class="n">30k</div><div class="l">milhas/pessoa (alvo) — ida+volta trechos BR</div></div>
+        <div class="kpi"><div class="n">≈ R$ 600</div><div class="l">custo de comprar 30k milhas (~R$20/milheiro)</div></div>
+        <div class="kpi"><div class="n" style="color:var(--good)">≤ R$ 700</div><div class="l">gatilho de alerta (dinheiro, por pessoa, i/v BR)</div></div>
+      </div>
+      <p class="note">Como as tarifas BSB↔IGU em dinheiro andam entre <b>R$ 450 e R$ 900</b> ida e volta, pagar em dinheiro tende a valer mais a pena do que queimar 30k milhas neste trecho. O monitor registra o preço em R$ e mostra o <b>equivalente em milhas</b> para você julgar — não compra nada sozinho.</p>
+    </div>
+
+    <div class="card">
+      <h2>Trechos monitorados</h2>
+      <div class="legs" id="legs"></div>
+      <p class="note">Preços por pessoa. Referência inicial coletada em 24/07/2026 (Google Voos / Momondo / Decolar). Os valores reais entram no histórico abaixo a cada consulta diária.</p>
+    </div>
+
+    <div class="card">
+      <h2>Histórico de preços</h2>
+      <div class="chartbox"><canvas id="chart"></canvas></div>
+      <form class="form" id="obsForm">
+        <input type="date" id="oData" required>
+        <select id="oTrecho">
+          <option value="BSB→IGU (ida)">BSB→IGU (ida)</option>
+          <option value="BUE→BSB (volta)">BUE→BSB (volta)</option>
+          <option value="IGR→BUE (regional)">IGR→BUE (regional)</option>
+        </select>
+        <input type="number" id="oPreco" placeholder="R$ / pessoa" min="0" step="1" required style="width:130px">
+        <input type="text" id="oCia" placeholder="Cia (opc.)" style="width:110px">
+        <button type="submit">Registrar</button>
+        <button type="button" class="ghost" id="clearBtn">Limpar tudo</button>
+      </form>
+      <div style="overflow:auto;margin-top:12px">
+        <table id="histTable">
+          <thead><tr><th>Data consulta</th><th>Trecho</th><th class="num">R$/pessoa</th><th class="num">≈ milhas</th><th>Cia</th><th>Status</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="note">Histórico salvo neste navegador (localStorage). A tarefa agendada diária te manda o número do dia — registre aqui para montar a curva.</p>
+    </div>
+  </section>
+
+  <section id="roteiro" class="hide">
+    <div class="card">
+      <h2>Roteiro sugerido (9–10 dias)</h2>
+      <div id="days"></div>
+      <p class="note">Tríplice fronteira por terra + 1 voo curto IGR→Buenos Aires. Dica-chave da planilha: embarque para BA em <b>Puerto Iguazú (IGR)</b>, não em Foz (IGU) — economia de ~R$ 1.000 no casal.</p>
+    </div>
+  </section>
+
+  <section id="orcamento" class="hide">
+    <div class="card">
+      <h2>Orçamento estimado (casal)</h2>
+      <div class="row" style="margin-bottom:14px">
+        <div class="kpi"><div class="n" id="totCasal">R$ 9.000</div><div class="l">total casal</div></div>
+        <div class="kpi"><div class="n" id="totPessoa">R$ 4.500</div><div class="l">por pessoa</div></div>
+      </div>
+      <table id="budgetTable">
+        <thead><tr><th>Categoria</th><th class="num">R$ (casal)</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p class="note">Valores da planilha V2 (câmbio ref. US$ 1 ≈ R$ 5,40). Edite um valor clicando nele para simular cenários.</p>
+    </div>
+  </section>
+
+  <section id="milhas" class="hide">
+    <div class="card">
+      <h2>Calculadora dinheiro ↔ milhas</h2>
+      <div class="calc">
+        <label>Milhas <input type="number" id="cMiles" value="30000" style="width:120px"></label>
+        <span>×</span>
+        <label>R$/milheiro <input type="number" id="cRate" value="20" step="1" style="width:90px"></label>
+        <span>=</span>
+        <div class="kpi" style="min-width:auto"><div class="n" id="cOut">R$ 600</div><div class="l">custo de aquisição</div></div>
+      </div>
+      <p class="note">Referências jul/2026: Smiles ~R$16–22/milheiro, LATAM Pass ~R$25/milheiro. No resgate de uma boa tarifa, o valor implícito pode passar de R$40/milheiro — por isso vale guardar milhas para trechos caros e pagar em dinheiro os baratos, como BSB↔IGU.</p>
+    </div>
+  </section>
+
+  <p class="sub" style="text-align:center">Protótipo · dados do roteiro V2 · atualiza o histórico localmente</p>
+</div>
+
+<script>
+const RATE = 20;
+const TARGET = 700;
+const fmt = n => 'R$ ' + Number(n).toLocaleString('pt-BR');
+
+(function(){
+  const dep = new Date('2026-10-30T00:00:00');
+  const days = Math.ceil((dep - new Date())/86400000);
+  document.getElementById('countdown').textContent = days;
+})();
+
+const LEGS = [
+  {rt:'BSB → IGU', dt:'ida · 30–31/10', pr:520, sub:'ida+volta BR (par com volta)'},
+  {rt:'BUE → BSB', dt:'volta · ~09–11/11', pr:900, sub:'internacional'},
+  {rt:'IGR → BUE', dt:'regional · ~04/11', pr:230, sub:'Flybondi/JetSMART/Aerolíneas'}
+];
+document.getElementById('legs').innerHTML = LEGS.map(l=>`
+  <div class="leg"><div class="rt">${l.rt}</div><div class="dt">${l.dt}</div>
+  <div class="pr">${fmt(l.pr)}</div><div class="flag">${l.sub}</div></div>`).join('');
+
+const DAYS = [
+  ['1–2','Foz do Iguaçu','Chegada; Cataratas lado BR + Parque das Aves','🇧🇷'],
+  ['3','Foz (bate-volta)','Ciudad del Este: Itaipu (PY), Saltos del Monday, compras','🇵🇾'],
+  ['4–5','Puerto Iguazú','Cataratas lado AR (Garganta del Diablo); Hito 3 Fronteiras; parrilla','🇦🇷'],
+  ['6','IGR → Buenos Aires','Voo ~1h30; tarde livre San Telmo/Puerto Madero','🇦🇷'],
+  ['7–9','Buenos Aires','Recoleta, Palermo, tango, gastronomia, day-trip Tigre/Colonia','🇦🇷'],
+  ['10','Retorno','Buenos Aires → BSB (ou via GRU) — checar tarifa','🏠']
+];
+document.getElementById('days').innerHTML = DAYS.map(d=>`
+  <div class="day"><div class="d">${d[0]}</div><div><b>${d[1]}</b> <span class="flag">${d[3]}</span><div class="mut">${d[2]}</div></div></div>`).join('');
+
+const BUDGET = [
+  ['Passagens (melhor opção)',1600],
+  ['Trechos internos/regionais',400],
+  ['Experiências/ingressos',1400],
+  ['Hospedagem + alimentação + transporte',5600]
+];
+function renderBudget(){
+  const tb = document.querySelector('#budgetTable tbody');
+  tb.innerHTML = BUDGET.map((b,i)=>`<tr><td>${b[0]}</td><td class="num" contenteditable data-i="${i}">${b[1].toLocaleString('pt-BR')}</td></tr>`).join('');
+  const tot = BUDGET.reduce((a,b)=>a+b[1],0);
+  document.getElementById('totCasal').textContent = fmt(tot);
+  document.getElementById('totPessoa').textContent = fmt(Math.round(tot/2));
+  tb.querySelectorAll('[contenteditable]').forEach(td=>{
+    td.addEventListener('blur',()=>{ const v=parseInt(td.textContent.replace(/\D/g,''))||0; BUDGET[td.dataset.i][1]=v; renderBudget(); });
+  });
+}
+renderBudget();
+
+function calc(){ const m=+document.getElementById('cMiles').value||0; const r=+document.getElementById('cRate').value||0;
+  document.getElementById('cOut').textContent = fmt(Math.round(m/1000*r)); }
+document.getElementById('cMiles').addEventListener('input',calc);
+document.getElementById('cRate').addEventListener('input',calc);
+
+const KEY='viagem_precos_v1';
+let hist = JSON.parse(localStorage.getItem(KEY)||'null');
+if(!hist){ hist=[
+  {data:'2026-07-24',trecho:'BSB→IGU (ida)',preco:520,cia:'LATAM/Azul'},
+  {data:'2026-07-24',trecho:'BUE→BSB (volta)',preco:900,cia:'—'},
+  {data:'2026-07-24',trecho:'IGR→BUE (regional)',preco:230,cia:'Flybondi'}
+]; save(); }
+function save(){ localStorage.setItem(KEY,JSON.stringify(hist)); }
+function statusTag(p){ if(p<=TARGET) return '<span class="tag t-good">no alvo</span>'; if(p<=TARGET*1.3) return '<span class="tag t-warn">perto</span>'; return '<span class="tag t-bad">acima</span>'; }
+function renderHist(){
+  const tb=document.querySelector('#histTable tbody');
+  tb.innerHTML = hist.slice().reverse().map((h,ri)=>{ const i=hist.length-1-ri; const miles=Math.round(h.preco/RATE*1000);
+    return `<tr><td>${h.data.split('-').reverse().join('/')}</td><td>${h.trecho}</td><td class="num">${fmt(h.preco)}</td><td class="num">${(miles/1000).toFixed(1)}k</td><td>${h.cia||'—'}</td><td>${statusTag(h.preco)}</td><td><button class="ghost" style="padding:4px 8px" data-del="${i}">✕</button></td></tr>`;
+  }).join('');
+  tb.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',()=>{ hist.splice(+b.dataset.del,1); save(); renderHist(); }));
+  drawChart();
+}
+let chart;
+function drawChart(){
+  const legs=['BSB→IGU (ida)','BUE→BSB (volta)','IGR→BUE (regional)'];
+  const colors={'BSB→IGU (ida)':'#0e8f79','BUE→BSB (volta)':'#c9761a','IGR→BUE (regional)':'#3b6fb0'};
+  const dates=[...new Set(hist.map(h=>h.data))].sort();
+  const ds=legs.map(lg=>({label:lg,borderColor:colors[lg],backgroundColor:colors[lg],tension:.25,spanGaps:true,
+    data:dates.map(d=>{const m=hist.find(h=>h.data===d&&h.trecho===lg);return m?m.preco:null;})}));
+  ds.push({label:'Alvo (R$700)',borderColor:'#c0392b',borderDash:[6,4],pointRadius:0,data:dates.map(()=>TARGET)});
+  if(chart)chart.destroy();
+  chart=new Chart(document.getElementById('chart'),{type:'line',
+    data:{labels:dates.map(d=>d.split('-').reverse().slice(0,2).join('/')),datasets:ds},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:12,font:{size:11}}}},
+      scales:{y:{ticks:{callback:v=>'R$'+v}}}}});
+}
+document.getElementById('obsForm').addEventListener('submit',e=>{e.preventDefault();
+  hist.push({data:document.getElementById('oData').value,trecho:document.getElementById('oTrecho').value,
+    preco:+document.getElementById('oPreco').value,cia:document.getElementById('oCia').value});
+  save(); renderHist(); e.target.reset(); document.getElementById('oData').valueAsDate=new Date();
+});
+document.getElementById('clearBtn').addEventListener('click',()=>{ if(confirm('Apagar todo o histórico?')){ hist=[]; save(); renderHist(); }});
+document.getElementById('oData').valueAsDate=new Date();
+renderHist();
+
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); t.classList.add('active');
+  ['monitor','roteiro','orcamento','milhas'].forEach(s=>document.getElementById(s).classList.add('hide'));
+  document.getElementById(t.dataset.t).classList.remove('hide');
+}));
+</script>
+</body>
+</html>
