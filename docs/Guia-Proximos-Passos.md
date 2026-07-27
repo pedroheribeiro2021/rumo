@@ -8,8 +8,8 @@ Documento de orientação para as próximas sessões de Claude Code. Reflete o e
 - **Banco (já aplicado no Supabase):** projeto `rachaconta` (`grsqjzrgngpyckcfkxon`), tabelas com prefixo `rumo_` no schema `public` (ADR 0001), RLS + hardening + auto-provisioning de perfil (ADR 0002). Tipos em `web/src/lib/database.types.ts` — regenerar via MCP após mudanças no `schema.sql`, não editar à mão.
 - **Feito (Sprint 0+1):** auth magic link (`AuthContext`, `RequireAuth`), CRUD de viagens (`useTrips`, `TripsPage`, `TripDetailPage`), gastos com divisão e acerto de contas (`ExpensesPage`, `settlement.ts`, `fx.ts`).
 
-## Pendência aberta a fechar antes de avançar
-- Confirmar login end-to-end no navegador. Causa raiz identificada: o Gmail/Google consome o link mágico via scanner de segurança antes do clique real (confirmado nos logs de auth do Supabase) — não é bug do Rumo, mas pode afetar usuários reais também. Mitigação sugerida: trocar magic link por OTP de 6 dígitos. Ver ADR 0003 e `Pendencias.md`.
+## Login — resolvido (2026-07-27 noite)
+Magic link trocado por e-mail + senha (ADR 0004) depois que o scanner de e-mail do Gmail se mostrou capaz de consumir o link antes do clique real (ADR 0003). Validado ponta a ponta no navegador com dados reais.
 
 ## Design system — feito (2026-07-27 tarde)
 Integrado a partir do export do Claude Design. Tokens em `web/src/styles/tokens/` + `@theme` em `web/src/index.css`; 16 componentes em `web/src/components/ui/`; as 4 páginas existentes já usam os componentes novos. Fonte visual original preservada em `design-system/`. Ver ADR 0003. **Toda tela nova (Sprint 2 em diante) deve puxar de `web/src/components/ui/`, não estilizar com classes Tailwind soltas.**

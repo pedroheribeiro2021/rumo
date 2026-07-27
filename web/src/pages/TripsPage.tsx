@@ -51,9 +51,9 @@ export function TripsPage() {
           <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <Input required autoFocus placeholder="Nome da viagem" value={name} onChange={(e) => setName(e.target.value)} />
             <Input placeholder="Destino (opcional)" value={destination} onChange={(e) => setDestination(e.target.value)} />
-            <div style={{ display: 'flex', gap: 8 }}>
-              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ flex: 1 }} />
-              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={{ flex: 1 }} />
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ flex: '1 1 140px' }} />
+              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={{ flex: '1 1 140px' }} />
             </div>
             <CurrencySelect label="Moeda base" value={baseCurrency} onChange={(e) => setBaseCurrency(e.target.value)} />
             <Button type="submit" fullWidth loading={createTrip.isPending}>

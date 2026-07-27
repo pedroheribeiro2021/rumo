@@ -263,7 +263,7 @@ export function ExpensesPage() {
 
           {showMore && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, borderTop: '1px solid var(--color-border)', paddingTop: 12 }}>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                 {effectiveCurrency !== trip.base_currency && (
                   <Input
                     type="number"
@@ -271,11 +271,11 @@ export function ExpensesPage() {
                     value={fxRate}
                     onChange={(e) => setFxRate(parseFloat(e.target.value) || 0)}
                     label={`Câmbio p/ ${trip.base_currency}`}
-                    style={{ flex: 1 }}
+                    style={{ flex: '1 1 140px' }}
                   />
                 )}
                 {fxLoading && <span style={{ fontSize: 'var(--text-body-sm)', color: 'var(--color-text-tertiary)' }}>buscando câmbio…</span>}
-                <Input type="date" label="Data" value={spentOn} onChange={(e) => setSpentOn(e.target.value)} style={{ flex: 1 }} />
+                <Input type="date" label="Data" value={spentOn} onChange={(e) => setSpentOn(e.target.value)} style={{ flex: '1 1 140px' }} />
               </div>
 
               <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontFamily: 'var(--font-sans)' }}>

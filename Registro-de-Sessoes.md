@@ -1,5 +1,39 @@
 # Registro de Sessões — Rumo
 
+## 2026-07-27 (noite) — Login corrigido (e-mail+senha) e validação completa
+
+**Objetivo:** resolver de vez o problema de login antes de avançar pra
+Sprint 2, e commitar o trabalho acumulado.
+
+**Alterações:**
+- `LoginPage.tsx` trocado de magic link para e-mail + senha
+  (`signUp`/`signInWithPassword`), com alternância "Entrar"/"Criar conta".
+  Ver ADR 0004 — o motivo é que o magic link estava (e continuaria)
+  funcionalmente quebrado pelo scanner de e-mail do Gmail (ADR 0003), não só
+  incômodo de testar.
+- Corrigido bug de responsividade: campos de data lado a lado (`TripsPage`,
+  `ExpensesPage`) estouravam em telas estreitas — `flexWrap: 'wrap'` +
+  `flex: '1 1 140px'`.
+- **Validação completa no navegador com dados reais:** criei conta, criei a
+  viagem "Foz do Iguaçu", lancei o gasto "Almoço" (R$150, categoria
+  alimentação) via Fab+Modal, conferi total e "Acerto de contas" — as 4
+  telas (Login, Viagens, Detalhe, Gastos) renderizam corretamente com o
+  design system novo.
+- Commit único cobrindo Sprint 0+1 (MVP) e a integração do design system
+  (131 arquivos).
+
+**Decisões:** ver `ADR/0004-login-email-senha.md`.
+
+**Pendências:** ver `Pendencias.md` — recuperação de senha ainda não
+implementada (mesmo risco de link-scanning se copiar o padrão do Supabase).
+
+**Arquivos modificados:** `web/src/pages/LoginPage.tsx`,
+`web/src/components/ui/Input.tsx` (prop `minLength`),
+`web/src/pages/{TripsPage,ExpensesPage}.tsx` (fix responsivo),
+`ADR/0004-*.md` (novo), `Pendencias.md`, `Registro-de-Sessoes.md`.
+
+---
+
 ## 2026-07-27 (tarde) — Integração do design system
 
 **Objetivo:** integrar o design system exportado do Claude Design

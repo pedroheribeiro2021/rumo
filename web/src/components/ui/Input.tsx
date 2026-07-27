@@ -17,6 +17,7 @@ export interface InputProps {
   inputMode?: HTMLAttributes<HTMLInputElement>['inputMode']
   step?: string | number
   min?: string | number
+  minLength?: number
   style?: CSSProperties
 }
 
@@ -37,6 +38,7 @@ export function Input({
   inputMode,
   step,
   min,
+  minLength,
   style,
 }: InputProps) {
   const [focused, setFocused] = useState(false)
@@ -78,6 +80,7 @@ export function Input({
           inputMode={inputMode}
           step={step}
           min={min}
+          minLength={minLength}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           style={{
