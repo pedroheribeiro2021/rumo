@@ -10,6 +10,8 @@ import { TripDetailPage } from './pages/TripDetailPage'
 import { ExpensesPage } from './pages/ExpensesPage'
 import { BudgetPage } from './pages/BudgetPage'
 import { ItineraryPage } from './pages/ItineraryPage'
+import { PriceWatchesPage } from './pages/PriceWatchesPage'
+import { PriceWatchDetailPage } from './pages/PriceWatchDetailPage'
 
 function App() {
   return (
@@ -64,6 +66,26 @@ function App() {
                 <RequireAuth>
                   <AppLayout>
                     <ItineraryPage />
+                  </AppLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/trips/:tripId/passagens"
+              element={
+                <RequireAuth>
+                  <AppLayout>
+                    <PriceWatchesPage />
+                  </AppLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/trips/:tripId/passagens/:watchId"
+              element={
+                <RequireAuth>
+                  <AppLayout>
+                    <PriceWatchDetailPage />
                   </AppLayout>
                 </RequireAuth>
               }

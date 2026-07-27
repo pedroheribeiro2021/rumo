@@ -15,8 +15,8 @@
 - [x] Roteiro dia a dia.
 
 ## Sprint 3 — Passagens & polish
-- [ ] Monitor de passagens (watches + observations + gráfico).
-- [ ] PWA/offline para gastos.
+- [x] Monitor de passagens (watches + observations + gráfico).
+- [x] PWA/offline para gastos.
 - [ ] Relatórios + export CSV/PDF.
 
 ## Backlog

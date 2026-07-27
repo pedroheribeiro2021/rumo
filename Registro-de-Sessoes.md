@@ -1,5 +1,64 @@
 # Registro de Sessões — Rumo
 
+## 2026-07-27 (madrugada) — Sprint 3: Monitor de passagens, PWA offline, deploy
+
+**Objetivo:** monitor de passagens, PWA com fila offline de gastos, e deploy
+em produção na Vercel.
+
+**Alterações:**
+- `usePriceWatches.ts`/`usePriceObservations.ts` + `PriceWatchesPage.tsx`
+  (lista de trechos com `StatusChip` indicando alvo atingido) +
+  `PriceWatchDetailPage.tsx` (histórico + `PriceHistoryChart.tsx` — gráfico
+  de linha SVG com crosshair/tooltip no hover, seguindo a skill `dataviz`:
+  marca fina 2px, alvo como linha tracejada, labels seletivos, tabela de
+  histórico como view acessível). Entrada 100% manual (arquitetura já
+  documentava que scraping de milhas/tarifas não é viável).
+- **PWA**: `vite-plugin-pwa` (manifest + service worker via Workbox,
+  `registerType: autoUpdate`). Ícones reais gerados (antes só existia um
+  favicon genérico) renderizando um HTML com o teal da marca + "R" e
+  capturando via screenshot do Chrome — `web/public/icon-192.png`,
+  `icon-512.png`, `apple-touch-icon.png`.
+- **Fila offline de gastos** (`web/src/lib/offlineQueue.ts`, localStorage em
+  vez de IndexedDB por simplicidade): `useCreateExpense` cai pra fila local
+  quando a rede falha de verdade; `useExpenses` mescla pendentes + servidor
+  e sobrevive a uma falha de fetch mantendo o cache anterior;
+  `useSyncPendingExpenses` reenvia sozinho quando a conexão volta.
+  `OfflineBanner` (já existia no design system) mostra a pendência.
+- **Achado importante:** o React Query pausa mutations/queries por padrão
+  quando `navigator.onLine` é `false` e nunca chama `mutationFn`/`queryFn` —
+  precisei `networkMode: 'always'` nos dois hooks pra que meu próprio
+  try/catch (que decide se guarda na fila) rode de verdade.
+- **Deploy:** Pedro conectou a Vercel ao GitHub
+  (`pedroheribeiro2021/rumo`, root `web/`) e configurou as env vars.
+  Confirmado build `READY` em produção.
+
+**Validado ponta a ponta no navegador:**
+- Monitor de passagens: criei trecho BSB→IGU (alvo R$700), registrei 2
+  observações (R$900 e R$650) — gráfico e `StatusChip` ("no alvo") corretos.
+- Offline: bloqueei o `fetch` de verdade pro Supabase (não só
+  `navigator.onLine`, que sozinho não bastava — ver achado acima), lancei um
+  gasto, confirmei fila + banner, restaurei a rede, confirmei sincronização
+  automática e o registro real no banco via SQL.
+
+**Decisões:** nenhum ADR novo nesta sessão — decisões de escopo (localStorage
+em vez de IndexedDB, entrada manual em vez de scraping) já estavam
+documentadas em `architecture.md`/ADRs anteriores.
+
+**Pendências:** ver `Pendencias.md` — Relatórios/export é o único item do
+roadmap ainda não feito; recuperação de senha; sync offline não é
+Background Sync de verdade (só funciona com a tela aberta).
+
+**Arquivos modificados:** `web/src/hooks/{usePriceWatches,usePriceObservations,useOnlineStatus}.ts` (novo),
+`web/src/pages/{PriceWatchesPage,PriceWatchDetailPage}.tsx` (novo),
+`web/src/components/PriceHistoryChart.tsx` (novo),
+`web/src/lib/offlineQueue.ts` (novo), `web/src/lib/types.ts`,
+`web/src/hooks/useExpenses.ts`, `web/src/pages/{ExpensesPage,TripDetailPage}.tsx`,
+`web/src/App.tsx`, `web/vite.config.ts`, `web/index.html`,
+`web/public/{icon-192,icon-512,apple-touch-icon}.png` (novo),
+`docs/roadmap.md`, `Pendencias.md`, `Registro-de-Sessoes.md`.
+
+---
+
 ## 2026-07-27 (noite, cont.) — Sprint 2: Orçamento + Roteiro
 
 **Objetivo:** implementar Orçamento e Roteiro seguindo `docs/Guia-Proximos-Passos.md`.

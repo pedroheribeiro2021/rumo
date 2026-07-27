@@ -1,14 +1,24 @@
 import { useMemo, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import { useTrip } from '../hooks/useTrips'
 import { useTripMembers } from '../hooks/useTripMembers'
-import { equalSplit, useCreateExpense, useDeleteExpense, useExpenses, type ExpenseWithSplits } from '../hooks/useExpenses'
+import {
+  equalSplit,
+  useCreateExpense,
+  useDeleteExpense,
+  useExpenses,
+  useSyncPendingExpenses,
+  type ExpenseWithSplits,
+} from '../hooks/useExpenses'
 import { useAuth } from '../contexts/AuthContext'
+import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { computeSettlement, type MemberBalance } from '../lib/settlement'
 import { fetchFxRate } from '../lib/fx'
 import { formatMoney as money } from '../lib/format'
 import { EXPENSE_CATEGORIES as CATEGORIES } from '../lib/categories'
-import { Button, Card, CurrencySelect, EmptyState, Fab, Input, LoadingState, Modal } from '../components/ui'
+import { dequeueExpense } from '../lib/offlineQueue'
+import { Button, Card, CurrencySelect, EmptyState, Fab, Input, LoadingState, Modal, OfflineBanner, StatusChip } from '../components/ui'
 
 export function ExpensesPage() {
   const { tripId } = useParams<{ tripId: string }>()
@@ -18,6 +28,9 @@ export function ExpensesPage() {
   const { data: expenses, isLoading } = useExpenses(tripId)
   const createExpense = useCreateExpense(tripId!)
   const deleteExpense = useDeleteExpense(tripId!)
+  const queryClient = useQueryClient()
+  const isOnline = useOnlineStatus()
+  useSyncPendingExpenses(tripId)
 
   const [open, setOpen] = useState(false)
   const [showMore, setShowMore] = useState(false)
@@ -58,6 +71,16 @@ export function ExpensesPage() {
   }, [members, expenses])
 
   const transfers = useMemo(() => computeSettlement(balances), [balances])
+  const pendingCount = useMemo(() => (expenses ?? []).filter((e) => e.pending).length, [expenses])
+
+  function handleDeleteExpense(expense: ExpenseWithSplits) {
+    if (expense.pending) {
+      dequeueExpense(expense.id)
+      queryClient.invalidateQueries({ queryKey: ['expenses', tripId] })
+    } else {
+      deleteExpense.mutate(expense.id)
+    }
+  }
 
   async function handleCurrencyChange(next: string) {
     setCurrency(next)
@@ -145,6 +168,12 @@ export function ExpensesPage() {
         </div>
       </div>
 
+      {(!isOnline || pendingCount > 0) && (
+        <div style={{ marginTop: 12 }}>
+          <OfflineBanner pendingCount={pendingCount} />
+        </div>
+      )}
+
       <div style={{ marginTop: 16 }}>
         {isLoading && <LoadingState />}
         {!isLoading && expenses?.length === 0 && <EmptyState icon="💸" title="Nenhum gasto ainda" message="Toque no + para lançar o primeiro." />}
@@ -156,7 +185,7 @@ export function ExpensesPage() {
                 expense={expense}
                 baseCurrency={trip.base_currency}
                 payerName={members?.find((m) => m.id === expense.paid_by)?.display_name}
-                onDelete={() => deleteExpense.mutate(expense.id)}
+                onDelete={() => handleDeleteExpense(expense)}
               />
             ))}
           </div>
@@ -350,13 +379,18 @@ function ExpenseRow({
 }) {
   const isForeign = expense.currency !== baseCurrency
   return (
-    <Card padding="sm" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <Card padding="sm" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', opacity: expense.pending ? 0.7 : 1 }}>
       <div style={{ minWidth: 0 }}>
         <p style={{ margin: 0, fontSize: 'var(--text-body)', fontWeight: 'var(--weight-medium)', color: 'var(--color-text-primary)' }}>
           {expense.description || expense.category || 'Gasto'}{' '}
           <span style={{ fontSize: 'var(--text-body-sm)', fontWeight: 'var(--weight-regular)', color: 'var(--color-text-tertiary)' }}>
             · {expense.category}
           </span>
+          {expense.pending && (
+            <span style={{ marginLeft: 6, display: 'inline-block', verticalAlign: 'middle' }}>
+              <StatusChip tone="warn">pendente</StatusChip>
+            </span>
+          )}
         </p>
         <p style={{ margin: '2px 0 0', fontSize: 'var(--text-body-sm)', color: 'var(--color-text-secondary)' }}>
           {expense.spent_on} · pago por {payerName ?? '—'}

@@ -17,10 +17,11 @@ Integrado a partir do export do Claude Design. Tokens em `web/src/styles/tokens/
 ## Sprint 2 — feito (2026-07-27 noite)
 Orçamento (`useBudget.ts`, `BudgetPage.tsx`) e Roteiro (`useItinerary.ts`, `ItineraryPage.tsx`) implementados e validados no navegador. Rotas `/trips/:tripId/{orcamento,roteiro}`, linkadas em `TripDetailPage`. Categorias compartilhadas em `web/src/lib/categories.ts` para o cruzamento planejado×real funcionar.
 
-## Sprint 3 — Passagens e polish
-- **Monitor de passagens** (`rumo_price_watches`, `rumo_price_observations`): hook + tela com alvo, trechos e histórico (gráfico). **Limitação honesta:** milhas não são scrapáveis; alimentar preços em dinheiro (entrada manual e/ou a tarefa agendada do Cowork que já existe) e usar rastreamento nativo do Google Voos como rede de segurança. Toda função `SECURITY DEFINER` nova segue o padrão do ADR 0002 (`set search_path`, `revoke from public`, grant explícito).
-- **PWA/offline:** adicionar `vite-plugin-pwa`; priorizar que o lançamento de gasto funcione offline (fila local → sync).
-- **Relatórios/export:** totais por categoria, por pessoa e por dia; export CSV/PDF.
+## Sprint 3 — feito (2026-07-27 madrugada), exceto relatórios
+- **Monitor de passagens**: `usePriceWatches.ts`/`usePriceObservations.ts`, `PriceWatchesPage.tsx` (lista com `StatusChip`), `PriceWatchDetailPage.tsx` (histórico + `PriceHistoryChart.tsx`). Entrada manual, como já era a limitação honesta documentada — nenhuma automação de scraping foi construída.
+- **PWA/offline**: `vite-plugin-pwa` configurado (manifest, ícones reais, service worker); fila offline de gastos em `web/src/lib/offlineQueue.ts` (localStorage, não IndexedDB) com sincronização automática via `useSyncPendingExpenses`. **Achado importante**: React Query pausa mutations/queries quando `navigator.onLine=false` por padrão — precisa `networkMode: 'always'` pra rodar a lógica própria de fallback.
+- **Deploy**: em produção na Vercel, conectado ao GitHub com auto-deploy. Lembrar de manter o Site URL do Supabase Auth sincronizado com o domínio de produção.
+- **Ainda falta:** Relatórios/export (totais por categoria, por pessoa e por dia; CSV/PDF) — único item do roadmap pendente.
 
 ## Reuso futuro (não bloqueia)
 `rachaconta` (divisão de conta) e `zerosheet-finance` (gastos/orçamento) têm padrões potencialmente reaproveitáveis. Avaliar quando fizer sentido; hoje o Rumo segue independente.

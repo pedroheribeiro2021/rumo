@@ -20,3 +20,9 @@ export type BudgetItemInsert = TablesInsert<'rumo_budget_items'>
 
 export type ItineraryDay = Tables<'rumo_itinerary_days'>
 export type ItineraryDayInsert = TablesInsert<'rumo_itinerary_days'>
+
+export type PriceWatch = Tables<'rumo_price_watches'>
+export type PriceWatchInsert = TablesInsert<'rumo_price_watches'>
+
+export type PriceObservation = Tables<'rumo_price_observations'>
+export type PriceObservationInsert = TablesInsert<'rumo_price_observations'>

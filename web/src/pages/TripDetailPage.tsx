@@ -46,6 +46,9 @@ export function TripDetailPage() {
         <Link to={`/trips/${trip.id}/roteiro`}>
           <Button variant="secondary">Roteiro</Button>
         </Link>
+        <Link to={`/trips/${trip.id}/passagens`}>
+          <Button variant="secondary">Passagens</Button>
+        </Link>
       </div>
 
       <Card style={{ marginTop: 24 }}>
