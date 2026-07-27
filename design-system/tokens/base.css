@@ -1,0 +1,5 @@
+*{box-sizing:border-box}
+body{margin:0;background:var(--color-bg);color:var(--color-text-primary);font-family:var(--font-sans);font-size:var(--text-body);line-height:var(--leading-body)}
+a{color:var(--color-text-link);text-decoration:none}
+a:hover{color:var(--color-text-link-hover);text-decoration:underline}
+:focus-visible{outline:none;box-shadow:var(--focus-ring);border-radius:var(--radius-sm)}

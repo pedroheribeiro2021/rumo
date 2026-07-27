@@ -1,0 +1,28 @@
+<!-- @dsCard group="Components" viewport="700x420" name="Navigation" subtitle="Tabs, BottomNav, Fab" -->
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body{padding:20px;background:var(--color-bg);margin:0}</style>
+</head><body><div id="root"></div>
+<script type="text/babel">
+const { Tabs, BottomNav, Fab } = window.RumoDesignSystem_15b2c0;
+function Demo(){
+  const [tab, setTab] = React.useState('monitor');
+  const [nav, setNav] = React.useState('expenses');
+  return (
+    <div style={{position:'relative',height:380}}>
+      <Tabs value={tab} onChange={setTab} items={[{value:'monitor',label:'Monitor'},{value:'roteiro',label:'Roteiro'},{value:'orcamento',label:'Orçamento'}]} />
+      <Fab icon="+" label="Novo gasto" offsetBottom={80} onClick={()=>{}} />
+      <div style={{position:'absolute',left:0,right:0,bottom:0}}>
+        <BottomNav value={nav} onChange={setNav} items={[
+          {value:'trips',label:'Viagens',icon:'🧭'},{value:'expenses',label:'Gastos',icon:'💰'},{value:'itinerary',label:'Roteiro',icon:'🗺️'},{value:'settings',label:'Ajustes',icon:'⚙️'}
+        ]} />
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+</script>
+</body></html>

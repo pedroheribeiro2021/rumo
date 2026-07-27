@@ -1,0 +1,30 @@
+<!-- @dsCard group="Components" viewport="700x460" name="Data" subtitle="Card, ListRow, Avatar" -->
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body{padding:20px;background:var(--color-bg)}</style>
+</head><body><div id="root"></div>
+<script type="text/babel">
+const { Card, ListRow, Avatar } = window.RumoDesignSystem_15b2c0;
+function Demo(){
+  return (
+    <div style={{display:'flex',gap:16,flexWrap:'wrap',maxWidth:680}}>
+      <Card style={{width:280}}>
+        <ListRow leading={<Avatar name="Ana Costa" />} title="Ana Costa" subtitle="dona" trailing="+R$ 320,00" />
+        <ListRow leading={<Avatar name="Pedro" />} title="Pedro" subtitle="membro" trailing="-R$ 140,00" divider={false} />
+      </Card>
+      <Card interactive style={{width:280}}>
+        <p style={{margin:0,fontWeight:600}}>Foz + Argentina</p>
+        <p style={{margin:'4px 0 0',color:'var(--color-text-secondary)',fontSize:13}}>30/10 a 09/11 · BRL</p>
+      </Card>
+      <div style={{display:'flex',gap:10,alignItems:'center'}}>
+        <Avatar name="Ana Costa" size="sm" /><Avatar name="Pedro" size="md" ring /><Avatar name="João" size="lg" />
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+</script>
+</body></html>

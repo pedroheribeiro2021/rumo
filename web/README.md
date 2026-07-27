@@ -1,10 +1,9 @@
 # web/
 
-App React (Vite) entra aqui. Ainda não scaffoldado — siga a ordem em `../CLAUDE.md`.
+Frontend do Rumo (React + Vite + TypeScript + Tailwind). Veja `../CLAUDE.md` para contexto do produto e convenções.
 
-Sugestão:
 ```bash
-npm create vite@latest . -- --template react-ts
-npm i @supabase/supabase-js @tanstack/react-query react-router-dom
-npm i -D tailwindcss postcss autoprefixer && npx tailwindcss init -p
+npm install
+cp .env.example .env.local   # preencha com as credenciais do seu projeto Supabase
+npm run dev
 ```

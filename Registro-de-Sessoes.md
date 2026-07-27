@@ -1,0 +1,85 @@
+# Registro de Sessões — Rumo
+
+## 2026-07-27 (tarde) — Integração do design system
+
+**Objetivo:** integrar o design system exportado do Claude Design
+(`Rumo Design System.zip`) antes de começar a Sprint 2.
+
+**Alterações:**
+- Export guardado em `design-system/` (tokens, componentes originais,
+  ui_kits de referência, readme) — mesmo papel que `prototype/index.html`.
+- Skill do projeto instalada em `.claude/skills/rumo-design/SKILL.md`.
+- Tokens religados em `web/src/index.css` via `@import` + bloco `@theme`
+  (Tailwind v4 CSS-first).
+- 16 componentes portados para `web/src/components/ui/*.tsx` (Button, Input,
+  CurrencySelect, Card, ListRow, Avatar, Tabs, BottomNav, Fab, StatusChip,
+  ProgressBar, Modal, EmptyState, LoadingState, ErrorState, OfflineBanner).
+- `LoginPage`, `TripsPage`, `TripDetailPage`, `ExpensesPage` e `AppLayout`
+  retrofitados para usar os componentes novos, mantendo toda a lógica real.
+  `ExpensesPage` passou de painel inline para `Fab` + `Modal` bottom-sheet
+  (padrão do `ui_kits/rumo-app/ExpensesScreen.jsx`).
+
+**Achado importante:** ao tentar validar visualmente, descobri (via
+`get_logs` do Supabase) que o link mágico está sendo consumido por um
+scanner de segurança de e-mail (Gmail/Google Safe Browsing) segundos após o
+envio — antes de qualquer clique real. Detalhes e mitigação sugerida (OTP de
+6 dígitos em vez de link clicável) em `ADR/0003`.
+
+**Decisões:** ver `ADR/0003-design-system-integracao.md`.
+
+**Pendências:** ver `Pendencias.md` — confirmação visual de
+Trips/TripDetail/Expenses no navegador (só Login foi confirmado; build e
+type-check passaram para as 4 páginas).
+
+**Arquivos modificados:** `design-system/` (novo), `.claude/skills/rumo-design/`
+(novo), `web/src/styles/tokens/` (novo), `web/src/components/ui/` (novo),
+`web/src/index.css`, `web/src/pages/{LoginPage,TripsPage,TripDetailPage,ExpensesPage}.tsx`,
+`web/src/components/AppLayout.tsx`, `ADR/0003-*.md` (novo), `Pendencias.md`,
+`Registro-de-Sessoes.md`.
+
+---
+
+## 2026-07-27 — MVP: Sprint 0 + Sprint 1 completos
+
+**Objetivo:** scaffold do frontend + Auth + CRUD de Viagens + tela de Gastos
+(divisão e acerto de contas), seguindo `docs/roadmap.md`.
+
+**Alterações:**
+- Scaffold `web/` (Vite + React 19 + TS + Tailwind v4), removido boilerplate
+  padrão do template.
+- Cliente Supabase (`web/src/lib/supabase.ts`), `AuthContext` com magic link,
+  `RequireAuth`, `AppLayout`.
+- `supabase/schema.sql` reescrito: todas as tabelas prefixadas com `rumo_`
+  (projeto Supabase compartilhado com outros apps — ver ADR 0001), RLS
+  habilitado em `rumo_profiles` (faltava no schema original), trigger de
+  auto-provisioning de perfil, hardening de funções `SECURITY DEFINER` (ver
+  ADR 0002).
+- Schema aplicado no projeto `rachaconta` (`grsqjzrgngpyckcfkxon`) via MCP do
+  Supabase; tipos TS gerados em `web/src/lib/database.types.ts`.
+- CRUD de Viagens (`useTrips`, `TripsPage`, `TripDetailPage`) — criar viagem
+  já insere o dono como `rumo_trip_members` automaticamente.
+- Tela de Gastos (`ExpensesPage`): lançamento rápido (valor + descrição são
+  os únicos campos visíveis por padrão; moeda, quem pagou, data e divisão
+  ficam atrás de "+ mais opções"), divisão igual/manual, câmbio buscado via
+  `VITE_FX_API_URL` quando a moeda difere da moeda base da viagem, total da
+  viagem, e painel de acerto de contas (algoritmo guloso de minimização de
+  transferências em `src/lib/settlement.ts`).
+
+**Bug encontrado e corrigido:** `AuthContext` resolvia `loading = false`
+usando `getSession()`, que não espera o client processar o hash/código do
+link de e-mail. Isso fazia o `RequireAuth` redirecionar para `/login` antes
+da sessão ser estabelecida, descartando o token. Corrigido para depender
+só de `onAuthStateChange`. Confirmado via logs do Supabase (`get_logs`,
+serviço `auth`) que o signup + login aconteceram com sucesso no servidor
+antes da correção; o trigger de auto-provisioning também foi confirmado
+(linha criada em `rumo_profiles` para o usuário de teste).
+
+**Decisões:** ver `ADR/0001-schema-supabase-compartilhado.md` e
+`ADR/0002-rls-hardening-e-auto-provisioning.md`.
+
+**Pendências:** ver `Pendencias.md` — principalmente a confirmação visual do
+login no navegador (bloqueada pelo rate limit de e-mail do Supabase nesta
+sessão).
+
+**Arquivos modificados:** `web/` (novo), `supabase/schema.sql`, `ADR/`
+(novo), `Pendencias.md` (novo), `Registro-de-Sessoes.md` (novo).
