@@ -1,5 +1,54 @@
 # Registro de Sessões — Rumo
 
+## 2026-07-27 (madrugada, cont. 2) — Fix de produção (404 em rotas profundas) + viagem real populada
+
+**Objetivo:** limpar a conta de teste do convite (Pedro ia convidar a
+namorada de verdade) e popular a viagem real com dados de uma planilha do
+Pedro.
+
+**Achado crítico ao validar em produção:** rotas profundas
+(`/trips/:id/roteiro`, etc.) davam **404 em produção** ao acessar
+direto/recarregar — a Vercel não sabia que devia servir `index.html` pra
+qualquer rota que não fosse um arquivo estático (comportamento padrão de
+SPA com client-side routing). Corrigido com `web/vercel.json` (rewrite
+catch-all, configuração oficial da Vercel pra Vite SPA). Sem isso, qualquer
+link direto compartilhado (inclusive o convite de membro) quebraria.
+
+**Limpeza:**
+- Removida a conta de teste (`+namorada@gmail.com`) e seu vínculo em
+  `rumo_trip_members` — confirmado sem sobra (`rumo_profiles` também
+  limpo via cascade).
+- Removidos os dados de teste que eu tinha criado na viagem real durante a
+  validação do Sprint 2/3/convite: 1 dia de roteiro solto, 1 item de
+  orçamento (`alimentação` R$300), os gastos "Almoço"/"Uber offline", e o
+  monitor de passagens BSB→IGU com observações inventadas.
+
+**Populado com dados reais:** a viagem "Foz do Iguaçu" recebeu
+`destination`/`start_date`/`end_date` (31/10 a 09/11/2026) e o roteiro
+completo de 10 dias + orçamento por categoria, extraídos da planilha
+`Comparativo_Viagens_2026_V2` (Google Sheets, acessada via
+`mcp__claude_ai_Google_Drive`, já que o arquivo `.gsheet` local é só um
+ponteiro do Google Drive Desktop — não dá pra ler pelo filesystem direto,
+`Read`/`Get-Content` falham com "Função incorreta"/EISDIR). A planilha
+compara 6 destinos; "Foz + Argentina + Paraguai (+ Buenos Aires)" é a opção
+vencedora (~R$9 mil o casal, 9–10 dias) e já bate com a viagem existente no
+app.
+
+**Decisão de mapeamento**: a planilha agrupa "hospedagem + alimentação +
+transporte local" num valor só (R$5.600); o app rastreia essas 3 categorias
+separadas. Coloquei o valor inteiro em `hospedagem` por ora e documentei em
+`Pendencias.md` — não inventei uma quebra que a planilha não informava.
+
+**Pendências:** ver `Pendencias.md`.
+
+**Arquivos modificados:** `web/vercel.json` (novo — fix crítico),
+`Pendencias.md`, `Registro-de-Sessoes.md`. Dados de produto alterados
+diretamente no Supabase (não são arquivo de repositório): `rumo_trips`,
+`rumo_itinerary_days`, `rumo_budget_items`, `rumo_trip_members`,
+`rumo_expenses`, `rumo_price_watches`.
+
+---
+
 ## 2026-07-27 (madrugada, cont.) — Convite de membro por e-mail (multi-usuário real)
 
 **Objetivo:** responder e resolver se dois usuários reais conseguem

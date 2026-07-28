@@ -3,7 +3,6 @@
 ## Em aberto
 - **Relatórios + export CSV/PDF** — único item do Sprint 3 ainda não feito. Ver `docs/roadmap.md`.
 - **Convite por e-mail não envia e-mail de verdade** — só cria/vincula o registro (ADR 0005). O dono precisa avisar a pessoa fora do app pra criar conta com aquele e-mail. Automatizar exigiria Edge Function + serviço de e-mail transacional.
-- Existe uma conta de teste real no Supabase (`pedro.heribeiro6795+namorada@gmail.com`) e uma viagem de teste ("Foz do Iguaçu" com gastos "Almoço"/"Uber offline") criadas durante a validação do convite e da fila offline — considerar limpar se for reciclar o ambiente pra uso real.
 - Nenhuma tela de edição de gasto/orçamento/roteiro/monitor existente ainda (só criar/excluir).
 - **Recuperação de senha não implementada.** `resetPasswordForEmail` tem o
   mesmo risco de link-scanning do magic link (ver ADR 0004) — pensar na
@@ -21,6 +20,11 @@
 - Ícones do PWA (`web/public/icon-*.png`) são só um "R" sobre teal sólido —
   sem versão maskable com área de segurança (Android pode cortar em círculo
   e cortar a letra). Funcional, mas não é polimento final de marca.
+- **Orçamento da viagem real** tem uma categoria "guarda-chuva": o item
+  "hospedagem" (R$5.600) na verdade representa hospedagem + alimentação +
+  transporte local combinados (é como a planilha de origem agrupava). Se
+  quiser comparação por categoria mais precisa, vale quebrar esse valor em
+  `hospedagem`/`alimentação`/`transporte` na tela de Orçamento.
 
 ## Concluído
 - Scaffold, Tailwind, Supabase, CRUD de Viagens, Gastos com divisão e
@@ -37,7 +41,17 @@
   configuradas. Lembrar de manter o **Site URL** do Supabase Auth apontando
   pro domínio de produção (não localhost) — ver instrução passada ao Pedro
   na sessão de deploy.
+- **Fix de produção: rotas profundas davam 404.** `/trips/:id/roteiro` etc.
+  quebravam ao acessar direto ou recarregar (SPA sem rewrite configurado na
+  Vercel). Corrigido com `web/vercel.json` (rewrite catch-all pra
+  `index.html`, padrão oficial da Vercel pra SPA Vite).
 - **Multi-usuário real (2+ contas na mesma viagem)** — convite por e-mail
   com vínculo automático de conta (ADR 0005). Validado ponta a ponta: convite
   pendente, criação de conta, vínculo automático via trigger, acesso
   completo à viagem (gastos, membros, acerto de contas) com login separado.
+  Conta de teste usada na validação já foi removida do banco.
+- **Viagem real populada**: "Foz do Iguaçu" (31/10 a 09/11/2026) com roteiro
+  de 10 dias e orçamento por categoria, a partir do
+  `Comparativo_Viagens_2026_V2` (Google Sheets) — opção vencedora da
+  comparação entre 6 destinos. Dados de teste (gastos, monitor de passagens)
+  removidos da viagem.
