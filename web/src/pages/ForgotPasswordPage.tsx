@@ -9,6 +9,7 @@ function translateError(message: string) {
   if (message.includes('Token has expired') || message.includes('invalid') || message.includes('expired'))
     return 'Código inválido ou expirado. Peça um novo.'
   if (message.includes('Password should be at least')) return 'A senha precisa ter pelo menos 6 caracteres.'
+  if (message.includes('different from the old password')) return 'A nova senha precisa ser diferente da atual.'
   return message
 }
 
@@ -80,7 +81,7 @@ export function ForgotPasswordPage() {
         {step === 'email' && (
           <>
             <p style={{ marginTop: 6, color: 'var(--color-text-secondary)', fontSize: 'var(--text-body)' }}>
-              Digite seu e-mail — vamos te mandar um código de 6 dígitos.
+              Digite seu e-mail — vamos te mandar um código.
             </p>
             <form onSubmit={handleSendCode} style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
               <Input type="email" required autoFocus placeholder="voce@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -95,7 +96,7 @@ export function ForgotPasswordPage() {
         {step === 'code' && (
           <>
             <p style={{ marginTop: 6, color: 'var(--color-text-secondary)', fontSize: 'var(--text-body)' }}>
-              Digite o código de 6 dígitos enviado para <strong>{email}</strong>.
+              Digite o código enviado para <strong>{email}</strong>.
             </p>
             <form onSubmit={handleVerifyCode} style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
               <Input
@@ -103,9 +104,9 @@ export function ForgotPasswordPage() {
                 inputMode="numeric"
                 required
                 autoFocus
-                placeholder="000000"
+                placeholder="Código do e-mail"
                 value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
               />
               <Button type="submit" fullWidth size="lg" loading={status === 'busy'}>
                 Confirmar código
