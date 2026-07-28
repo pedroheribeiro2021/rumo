@@ -4,10 +4,13 @@
 - **Relatórios + export CSV/PDF** — único item do Sprint 3 ainda não feito. Ver `docs/roadmap.md`.
 - **Convite por e-mail não envia e-mail de verdade** — só cria/vincula o registro (ADR 0005). O dono precisa avisar a pessoa fora do app pra criar conta com aquele e-mail. Automatizar exigiria Edge Function + serviço de e-mail transacional.
 - Nenhuma tela de edição de gasto/orçamento/roteiro/monitor existente ainda (só criar/excluir).
-- **Recuperação de senha não implementada.** `resetPasswordForEmail` tem o
-  mesmo risco de link-scanning do magic link (ver ADR 0004) — pensar na
-  mitigação (ex.: OTP de 6 dígitos com template de e-mail ajustado no
-  dashboard) antes de implementar.
+- **Recuperação de senha: falta 1 ajuste manual seu pra funcionar de verdade.**
+  Implementei o fluxo (código de 6 dígitos, não link — ADR 0006), mas o
+  e-mail só vai mostrar o código depois que você trocar o template "Reset
+  Password" no dashboard do Supabase (Authentication → Email Templates) pra
+  usar `{{ .Token }}` em vez de `{{ .ConfirmationURL }}`. Sem isso, o e-mail
+  só tem o link (mesmo problema do scanner do ADR 0003/0004). Texto sugerido
+  no ADR 0006.
 - Orçamento compara categoria por string exata com `rumo_expenses.category`
   — ambos usam a mesma lista fixa (`EXPENSE_CATEGORIES` em
   `web/src/lib/categories.ts`), então funciona, mas se algum dia a categoria

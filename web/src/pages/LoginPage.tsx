@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { Button, Input } from '../components/ui'
@@ -124,6 +124,11 @@ export function LoginPage() {
               {mode === 'signin' ? 'Entrar' : 'Criar conta'}
             </Button>
             {status === 'error' && <p style={{ margin: 0, fontSize: 'var(--text-body-sm)', color: 'var(--color-error)' }}>{errorMsg}</p>}
+            {mode === 'signin' && (
+              <Link to="/esqueci-senha" style={{ textAlign: 'center', fontSize: 'var(--text-body-sm)', color: 'var(--color-text-tertiary)' }}>
+                Esqueci minha senha
+              </Link>
+            )}
           </form>
         )}
 

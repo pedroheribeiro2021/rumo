@@ -5,6 +5,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import { RequireAuth } from './components/RequireAuth'
 import { AppLayout } from './components/AppLayout'
 import { LoginPage } from './pages/LoginPage'
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { TripsPage } from './pages/TripsPage'
 import { TripDetailPage } from './pages/TripDetailPage'
 import { ExpensesPage } from './pages/ExpensesPage'
@@ -20,6 +21,7 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
             <Route
               path="/"
               element={

@@ -1,5 +1,42 @@
 # Registro de Sessões — Rumo
 
+## 2026-07-28 — Reset de senha + recuperação de senha (OTP)
+
+**Objetivo:** Pedro esqueceu a senha; resetei direto no banco (a pedido, pra
+`123456` — senha temporária/fraca de propósito, ele troca depois) e
+implementei o "esqueci minha senha" que estava pendente.
+
+**Alterações:**
+- `ForgotPasswordPage.tsx` (nova, rota `/esqueci-senha`): 3 passos sem
+  nenhum link clicável — e-mail → código de 6 dígitos → nova senha
+  (`resetPasswordForEmail` → `verifyOtp({type:'recovery'})` →
+  `updateUser({password})`). Link "Esqueci minha senha" adicionado em
+  `LoginPage` (modo entrar).
+- Mesma lógica do ADR 0004 (magic link comido pelo scanner de e-mail):
+  código digitado é mais robusto que link clicável.
+
+**Validado ponta a ponta o que dava pra validar sem acesso ao dashboard:**
+testei o formulário completo (todos os 3 passos, mensagens de erro) usando
+o `token_hash` do link como código inválido de propósito — confirmei que
+`verifyOtp` rejeita corretamente ("Código inválido ou expirado"). Isso
+provou uma coisa importante: **o `token_hash` da URL do link não é o mesmo
+valor que o código de 6 dígitos** — só aparece um código digitável se o
+template do e-mail usar `{{ .Token }}` em vez de `{{ .ConfirmationURL }}`,
+e essa edição só dá pra fazer manualmente no dashboard (mesma limitação já
+registrada no ADR 0004, sem endpoint MCP/API pra isso).
+
+**Pendência real**: o Pedro precisa editar o template "Reset Password" no
+Supabase (texto sugerido no ADR 0006) antes do fluxo funcionar de ponta a
+ponta pra um usuário de verdade.
+
+**Decisões:** ver `ADR/0006-recuperacao-de-senha-otp.md`.
+
+**Arquivos modificados:** `web/src/pages/ForgotPasswordPage.tsx` (novo),
+`web/src/pages/LoginPage.tsx`, `web/src/App.tsx`, `ADR/0006-*.md` (novo),
+`Pendencias.md`, `Registro-de-Sessoes.md`.
+
+---
+
 ## 2026-07-27 (madrugada, cont. 2) — Fix de produção (404 em rotas profundas) + viagem real populada
 
 **Objetivo:** limpar a conta de teste do convite (Pedro ia convidar a
