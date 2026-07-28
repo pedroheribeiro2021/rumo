@@ -38,6 +38,25 @@ export function useAddTripMember(tripId: string) {
   })
 }
 
+export function useInviteTripMember(tripId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (input: { email: string; displayName: string }) => {
+      const { data, error } = await supabase.rpc('rumo_invite_trip_member', {
+        p_trip_id: tripId,
+        p_email: input.email,
+        p_display_name: input.displayName,
+      })
+      if (error) throw error
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trip-members', tripId] })
+    },
+  })
+}
+
 export function useRemoveTripMember(tripId: string) {
   const queryClient = useQueryClient()
 

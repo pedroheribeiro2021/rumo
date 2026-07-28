@@ -1,5 +1,49 @@
 # Registro de Sessões — Rumo
 
+## 2026-07-27 (madrugada, cont.) — Convite de membro por e-mail (multi-usuário real)
+
+**Objetivo:** responder e resolver se dois usuários reais conseguem
+compartilhar/co-gerenciar a mesma viagem (pergunta do Pedro: viajar com a
+namorada).
+
+**Achado ao investigar:** o modelo de dados (`trip_members.profile_id` +
+RLS via `rumo_is_trip_member`) já suportava isso desde o início, mas
+"Adicionar membro" só criava um nome pra divisão de gasto — sem vínculo de
+conta real. Faltava o fluxo de convite.
+
+**Alterações:**
+- `rumo_invite_trip_member` (função `SECURITY DEFINER` nova, migration
+  `rumo_trip_member_invite_by_email`): vincula `profile_id` na hora se o
+  e-mail convidado já tiver conta (precisa ser definer pra contornar a RLS
+  de `rumo_profiles`, que só deixa ver o próprio perfil).
+- `rumo_handle_new_user` (trigger existente, só adicionei uma linha): ao
+  cadastrar, vincula automaticamente qualquer convite pendente com esse
+  e-mail.
+- `useInviteTripMember` (hook novo) + campo de e-mail opcional em
+  `TripDetailPage`, com `StatusChip` mostrando "conta vinculada" ou "convite
+  pendente" por membro.
+- Tipos regenerados (`database.types.ts`), `supabase/schema.sql` atualizado.
+
+**Validado ponta a ponta:** convidei um e-mail sem conta (ficou "convite
+pendente"), criei a conta de teste com esse e-mail, confirmei o vínculo
+automático via SQL, logei com a conta nova — acesso completo à viagem do
+Pedro (gastos, total, acerto de contas, membros), sem precisar escrever
+nenhum código extra de leitura (a RLS já cobria).
+
+**Decisões:** ver `ADR/0005-convite-membro-por-email.md`.
+
+**Pendências:** ver `Pendencias.md` — não envia e-mail de convite de
+verdade (só cria/vincula o registro); ficaram uma conta e uma viagem de
+teste reais no Supabase compartilhado.
+
+**Arquivos modificados:** `supabase/schema.sql`,
+`web/src/lib/database.types.ts`, `web/src/hooks/useTripMembers.ts`,
+`web/src/pages/TripDetailPage.tsx`, `ADR/0005-*.md` (novo), `Pendencias.md`,
+`Registro-de-Sessoes.md`. Vault do Obsidian também atualizado (`Índice.md`,
+`Projetos/README.md`, `Infra-Cloud-Compartilhada.md`).
+
+---
+
 ## 2026-07-27 (madrugada) — Sprint 3: Monitor de passagens, PWA offline, deploy
 
 **Objetivo:** monitor de passagens, PWA com fila offline de gastos, e deploy

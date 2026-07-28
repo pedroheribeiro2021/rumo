@@ -105,13 +105,19 @@ create table if not exists rumo_price_observations (
   note text
 );
 
--- Cria automaticamente a linha em rumo_profiles quando um usuário se registra
+-- Cria automaticamente a linha em rumo_profiles quando um usuário se registra,
+-- e vincula qualquer convite pendente (trip_members com esse e-mail sem profile_id ainda).
 create or replace function rumo_handle_new_user() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
   insert into rumo_profiles (id, email, name)
   values (new.id, new.email, new.raw_user_meta_data->>'name')
   on conflict (id) do nothing;
+
+  update rumo_trip_members
+  set profile_id = new.id
+  where email = new.email and profile_id is null;
+
   return new;
 end;
 $$;
@@ -143,11 +149,41 @@ language sql security definer stable set search_path = public as $$
   );
 $$;
 
+-- Convite de membro por e-mail: vincula profile_id na hora se a conta já existir
+-- (rumo_profiles tem RLS restrita a id=auth.uid(), então o lookup por e-mail de
+-- outro usuário precisa rodar como SECURITY DEFINER); senão fica pendente até o
+-- convidado se cadastrar (rumo_handle_new_user vincula automaticamente nesse momento).
+create or replace function rumo_invite_trip_member(p_trip_id uuid, p_email text, p_display_name text)
+returns rumo_trip_members
+language plpgsql security definer set search_path = public as $$
+declare
+  v_profile_id uuid;
+  v_member rumo_trip_members;
+begin
+  if not rumo_is_trip_member(p_trip_id) then
+    raise exception 'not a member of this trip';
+  end if;
+
+  select id into v_profile_id from rumo_profiles where email = p_email limit 1;
+
+  insert into rumo_trip_members (trip_id, profile_id, display_name, email, role)
+  values (p_trip_id, v_profile_id, p_display_name, p_email, 'member')
+  on conflict (trip_id, display_name) do update
+    set email = excluded.email, profile_id = excluded.profile_id
+  returning * into v_member;
+
+  return v_member;
+end;
+$$;
+
 -- Funções SECURITY DEFINER não devem ser chamáveis via RPC pública:
--- rumo_handle_new_user só roda via trigger; rumo_is_trip_member só é usada dentro de policies.
+-- rumo_handle_new_user só roda via trigger; rumo_is_trip_member só é usada dentro de policies;
+-- rumo_invite_trip_member precisa ser chamável por membros autenticados (é a única exceção real).
 revoke execute on function rumo_handle_new_user() from public;
 revoke execute on function rumo_is_trip_member(uuid) from public;
 grant execute on function rumo_is_trip_member(uuid) to authenticated;
+revoke execute on function rumo_invite_trip_member(uuid, text, text) from public;
+grant execute on function rumo_invite_trip_member(uuid, text, text) to authenticated;
 
 create policy "usuário vê/edita seu próprio perfil" on rumo_profiles
   for all to authenticated using (id = auth.uid()) with check (id = auth.uid());

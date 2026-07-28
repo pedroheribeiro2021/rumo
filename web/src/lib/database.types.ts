@@ -1271,6 +1271,17 @@ export type Database = {
         Returns: boolean
       }
       is_room_participant: { Args: { p_room_id: string }; Returns: boolean }
+      rumo_invite_trip_member: {
+        Args: { p_display_name: string; p_email: string; p_trip_id: string }
+        Returns: {
+          display_name: string
+          email: string | null
+          id: string
+          profile_id: string | null
+          role: string
+          trip_id: string
+        }
+      }
       rumo_is_trip_member: { Args: { t: string }; Returns: boolean }
     }
     Enums: {

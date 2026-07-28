@@ -1,16 +1,18 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useTrip } from '../hooks/useTrips'
-import { useAddTripMember, useRemoveTripMember, useTripMembers } from '../hooks/useTripMembers'
-import { Avatar, Button, Card, Input, ListRow, LoadingState } from '../components/ui'
+import { useAddTripMember, useInviteTripMember, useRemoveTripMember, useTripMembers } from '../hooks/useTripMembers'
+import { Avatar, Button, Card, Input, ListRow, LoadingState, StatusChip } from '../components/ui'
 
 export function TripDetailPage() {
   const { tripId } = useParams<{ tripId: string }>()
   const { data: trip, isLoading } = useTrip(tripId)
   const { data: members } = useTripMembers(tripId)
   const addMember = useAddTripMember(tripId!)
+  const inviteMember = useInviteTripMember(tripId!)
   const removeMember = useRemoveTripMember(tripId!)
   const [newMemberName, setNewMemberName] = useState('')
+  const [newMemberEmail, setNewMemberEmail] = useState('')
 
   if (isLoading) return <LoadingState />
   if (!trip) return <p style={{ fontSize: 'var(--text-body-sm)', color: 'var(--color-text-secondary)' }}>Viagem não encontrada.</p>
@@ -18,8 +20,13 @@ export function TripDetailPage() {
   async function handleAddMember(e: React.FormEvent) {
     e.preventDefault()
     if (!newMemberName.trim()) return
-    await addMember.mutateAsync({ display_name: newMemberName.trim(), role: 'member' })
+    if (newMemberEmail.trim()) {
+      await inviteMember.mutateAsync({ email: newMemberEmail.trim(), displayName: newMemberName.trim() })
+    } else {
+      await addMember.mutateAsync({ display_name: newMemberName.trim(), role: 'member' })
+    }
     setNewMemberName('')
+    setNewMemberEmail('')
   }
 
   return (
@@ -61,34 +68,53 @@ export function TripDetailPage() {
               title={m.display_name}
               subtitle={m.role === 'owner' ? 'dono' : undefined}
               trailing={
-                m.role !== 'owner' ? (
-                  <button
-                    onClick={() => removeMember.mutate(m.id)}
-                    style={{
-                      border: 'none',
-                      background: 'none',
-                      color: 'var(--color-text-tertiary)',
-                      fontSize: 'var(--text-body-sm)',
-                      cursor: 'pointer',
-                      fontFamily: 'var(--font-sans)',
-                    }}
-                  >
-                    Remover
-                  </button>
-                ) : undefined
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {m.role !== 'owner' && m.profile_id && <StatusChip tone="good">conta vinculada</StatusChip>}
+                  {m.role !== 'owner' && !m.profile_id && m.email && <StatusChip tone="warn">convite pendente</StatusChip>}
+                  {m.role !== 'owner' && (
+                    <button
+                      onClick={() => removeMember.mutate(m.id)}
+                      style={{
+                        border: 'none',
+                        background: 'none',
+                        color: 'var(--color-text-tertiary)',
+                        fontSize: 'var(--text-body-sm)',
+                        cursor: 'pointer',
+                        fontFamily: 'var(--font-sans)',
+                      }}
+                    >
+                      Remover
+                    </button>
+                  )}
+                </div>
               }
               divider={i < (members?.length ?? 0) - 1}
             />
           ))}
         </div>
-        <form onSubmit={handleAddMember} style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-          <Input placeholder="Nome do viajante" value={newMemberName} onChange={(e) => setNewMemberName(e.target.value)} style={{ flex: 1 }} />
-          <Button type="submit" variant="secondary" loading={addMember.isPending}>
-            Adicionar
+        <form onSubmit={handleAddMember} style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Input
+              placeholder="Nome do viajante"
+              value={newMemberName}
+              onChange={(e) => setNewMemberName(e.target.value)}
+              style={{ flex: '1 1 140px' }}
+            />
+            <Input
+              type="email"
+              placeholder="E-mail (opcional — pra ela(e) acessar com a própria conta)"
+              value={newMemberEmail}
+              onChange={(e) => setNewMemberEmail(e.target.value)}
+              style={{ flex: '1 1 220px' }}
+            />
+          </div>
+          <Button type="submit" variant="secondary" loading={addMember.isPending || inviteMember.isPending}>
+            {newMemberEmail.trim() ? 'Convidar' : 'Adicionar'}
           </Button>
         </form>
         <p style={{ marginTop: 8, fontSize: 'var(--text-body-sm)', color: 'var(--color-text-tertiary)' }}>
-          Membros sem conta (só nome) já podem participar da divisão de gastos.
+          Sem e-mail, o membro só participa da divisão de gastos. Com e-mail: se a pessoa já tem conta, o acesso libera
+          na hora; se não tem, é só criar conta com esse mesmo e-mail que a viagem aparece pra ela sozinha.
         </p>
       </Card>
     </div>
