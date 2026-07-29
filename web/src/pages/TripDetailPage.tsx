@@ -147,7 +147,8 @@ export function TripDetailPage() {
 
       <Card style={{ marginTop: 16 }} padding="sm">
         <ListRow title="Passagens" subtitle="Monitor de preços" onClick={() => navigate(`/trips/${trip.id}/passagens`)} divider />
-        <ListRow title="Câmbio" subtitle="Calculadora de conversão" onClick={() => navigate(`/trips/${trip.id}/cambio`)} divider={false} />
+        <ListRow title="Câmbio" subtitle="Calculadora de conversão" onClick={() => navigate(`/trips/${trip.id}/cambio`)} divider />
+        <ListRow title="Checklist" subtitle="Lista de bagagem/pré-viagem" onClick={() => navigate(`/trips/${trip.id}/checklist`)} divider={false} />
       </Card>
 
       <Card style={{ marginTop: 24 }}>

@@ -1,6 +1,10 @@
 # Pendências — Rumo
 
 ## Em aberto
+- **Dia do roteiro só tem um `title`/`notes`, não períodos (Manhã/Almoço/Tarde/Noite).**
+  Promover mais de uma opção de Planejamento pro mesmo dia sobrescreve o
+  conteúdo anterior. Identificado ao revisar a planilha de viagem do Pedro
+  (aba Roteiro usa períodos) — deixado pra depois de propósito, ver ADR 0009.
 - **`npm audit` acusa 10 vulnerabilidades "high"** (descoberto ao instalar as
   deps de teste em 2026-07-29): `react-router` 7.12.0–8.2.0 tem um CSRF
   bypass em modo RSC (não usamos RSC, mas vale atualizar) e `brace-expansion`
@@ -26,14 +30,19 @@
   `hospedagem`/`alimentação`/`transporte` na tela de Orçamento.
 
 ## Concluído
+- **Unificação de Ideias + Logística em "Planejamento"** (com preço e cidade
+  nas opções, promover com exclusividade por cidade só pra hospedagem/
+  transporte) **+ Checklist de bagagem** — a pedido do Pedro, usando a
+  planilha da última viagem dele como referência. Ver ADR 0009.
 - **CI no GitHub (lint + testes + build) + testes automatizados (Vitest)** —
   ver ADR 0008. Lógica de negócio arriscada (acerto de contas, orçamento por
-  categoria/dia) extraída pra funções puras com teste; testes de página
-  completa (mock de Supabase/react-query/router) e E2E ficaram fora do
-  escopo, ver ADR 0008.
-- **Navbar, orçamento flexível, divisão opcional, edição de viagem/roteiro e
-  2 módulos novos (Ideias de roteiro, Logística) + calculadora de câmbio +
-  upload de capa** — os 9 pedidos da sessão de 2026-07-29, ver ADR 0007.
+  categoria/dia, agrupamento de planejamento por cidade) extraída pra
+  funções puras com teste; testes de página completa (mock de Supabase/
+  react-query/router) e E2E ficaram fora do escopo, ver ADR 0008.
+- **Navbar, orçamento flexível, divisão opcional, edição de viagem/roteiro,
+  calculadora de câmbio e upload de capa** — os pedidos da sessão de
+  2026-07-29, ver ADR 0007 (os módulos "Ideias de roteiro" e "Logística"
+  criados aqui foram depois unificados em "Planejamento", ver ADR 0009).
 - **Recuperação de senha** — template "Reset Password" ajustado pelo Pedro no
   dashboard do Supabase; fluxo de código validado ponta a ponta (ADR 0006).
 - Scaffold, Tailwind, Supabase, CRUD de Viagens, Gastos com divisão e
