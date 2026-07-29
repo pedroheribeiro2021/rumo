@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import type { Trip, TripInsert, TripUpdate } from '../lib/types'
-import { EXPENSE_CATEGORIES } from '../lib/categories'
+import { EXPENSE_CATEGORIES, PLANNING_CATEGORIES } from '../lib/categories'
 
 export function useTrips() {
   const { session } = useAuth()
@@ -63,6 +63,11 @@ export function useCreateTrip() {
         .from('rumo_budget_categories')
         .insert(EXPENSE_CATEGORIES.map((name, i) => ({ trip_id: trip.id, name, sort_order: i })))
       if (categoriesError) throw categoriesError
+
+      const { error: planningCategoriesError } = await supabase
+        .from('rumo_planning_categories')
+        .insert(PLANNING_CATEGORIES.map((name, i) => ({ trip_id: trip.id, name, sort_order: i })))
+      if (planningCategoriesError) throw planningCategoriesError
 
       return trip
     },

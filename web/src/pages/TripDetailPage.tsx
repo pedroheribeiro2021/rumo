@@ -1,14 +1,44 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useTrip, useUpdateTrip, useUploadTripCover } from '../hooks/useTrips'
 import { useAddTripMember, useInviteTripMember, useRemoveTripMember, useTripMembers } from '../hooks/useTripMembers'
-import { Avatar, Button, Card, CurrencySelect, Input, ListRow, LoadingState, Modal, StatusChip } from '../components/ui'
+import { useExpenses } from '../hooks/useExpenses'
+import { useBudgetItems } from '../hooks/useBudget'
+import { useItineraryDays } from '../hooks/useItinerary'
+import { useChecklistItems } from '../hooks/useChecklist'
+import { formatMoney as money } from '../lib/format'
+import { Avatar, Button, Card, CurrencySelect, Input, ListRow, LoadingState, Modal, ProgressBar, StatusChip } from '../components/ui'
+
+function formatDay(dayDate: string | null) {
+  if (!dayDate) return '?'
+  const [, month, day] = dayDate.split('-')
+  return `${day}/${month}`
+}
+
+// Compara datas ISO (YYYY-MM-DD) como string — ordena igual a comparação cronológica,
+// sem risco de fuso horário que `new Date(dateStr)` traria.
+function countdownLabel(startDate: string | null, endDate: string | null): string | null {
+  if (!startDate) return null
+  const today = new Date().toISOString().slice(0, 10)
+  if (today < startDate) {
+    const days = Math.round(
+      (new Date(`${startDate}T00:00:00Z`).getTime() - new Date(`${today}T00:00:00Z`).getTime()) / 86400000,
+    )
+    return `Faltam ${days} dia${days === 1 ? '' : 's'} pra viagem`
+  }
+  if (endDate && today > endDate) return 'Viagem concluída'
+  return 'Viagem em andamento'
+}
 
 export function TripDetailPage() {
   const { tripId } = useParams<{ tripId: string }>()
   const navigate = useNavigate()
   const { data: trip, isLoading } = useTrip(tripId)
   const { data: members } = useTripMembers(tripId)
+  const { data: expenses } = useExpenses(tripId)
+  const { data: budgetItems } = useBudgetItems(tripId)
+  const { data: itineraryDays } = useItineraryDays(tripId)
+  const { data: checklistItems } = useChecklistItems(tripId)
   const addMember = useAddTripMember(tripId!)
   const inviteMember = useInviteTripMember(tripId!)
   const removeMember = useRemoveTripMember(tripId!)
@@ -16,6 +46,20 @@ export function TripDetailPage() {
   const uploadCover = useUploadTripCover(tripId!)
   const [newMemberName, setNewMemberName] = useState('')
   const [newMemberEmail, setNewMemberEmail] = useState('')
+
+  const totalSpent = useMemo(() => (expenses ?? []).reduce((sum, e) => sum + e.amount * e.fx_to_base, 0), [expenses])
+  const totalPlanned = useMemo(
+    () => (budgetItems ?? []).filter((b) => b.category).reduce((sum, b) => sum + b.planned_amount, 0),
+    [budgetItems],
+  )
+
+  const nextDay = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10)
+    return (itineraryDays ?? []).find((d) => d.day_date && d.day_date >= today) ?? null
+  }, [itineraryDays])
+
+  const checklistDone = useMemo(() => (checklistItems ?? []).filter((c) => c.done).length, [checklistItems])
+  const checklistTotal = checklistItems?.length ?? 0
 
   const [editOpen, setEditOpen] = useState(false)
   const [editName, setEditName] = useState('')
@@ -145,10 +189,47 @@ export function TripDetailPage() {
         </form>
       </Modal>
 
+      <Card style={{ marginTop: 16 }}>
+        {(() => {
+          const countdown = countdownLabel(trip.start_date, trip.end_date)
+          return countdown ? (
+            <p style={{ margin: '0 0 14px', fontSize: 'var(--text-body-sm)', fontWeight: 'var(--weight-medium)', color: 'var(--color-brand)' }}>
+              {countdown}
+            </p>
+          ) : null
+        })()}
+
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-body-sm)', marginBottom: 6 }}>
+            <span style={{ color: 'var(--color-text-primary)' }}>Orçamento</span>
+            <span style={{ color: 'var(--color-text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
+              {money(totalSpent, trip.base_currency)} {totalPlanned > 0 ? `/ ${money(totalPlanned, trip.base_currency)}` : ''}
+            </span>
+          </div>
+          <ProgressBar
+            value={totalSpent}
+            max={totalPlanned || 1}
+            tone={totalPlanned > 0 && totalSpent > totalPlanned ? 'bad' : 'brand'}
+          />
+        </div>
+
+        <ListRow
+          title="Roteiro"
+          subtitle={nextDay ? `${formatDay(nextDay.day_date)}${nextDay.base_city ? ` · ${nextDay.base_city}` : ''}${nextDay.title ? ` — ${nextDay.title}` : ''}` : 'Nenhum dia planejado ainda'}
+          onClick={() => navigate(`/trips/${trip.id}/roteiro`)}
+          divider
+        />
+        <ListRow
+          title="Checklist"
+          subtitle={checklistTotal > 0 ? `${checklistDone}/${checklistTotal} concluídos` : 'Nenhum item ainda'}
+          onClick={() => navigate(`/trips/${trip.id}/checklist`)}
+          divider={false}
+        />
+      </Card>
+
       <Card style={{ marginTop: 16 }} padding="sm">
         <ListRow title="Passagens" subtitle="Monitor de preços" onClick={() => navigate(`/trips/${trip.id}/passagens`)} divider />
-        <ListRow title="Câmbio" subtitle="Calculadora de conversão" onClick={() => navigate(`/trips/${trip.id}/cambio`)} divider />
-        <ListRow title="Checklist" subtitle="Lista de bagagem/pré-viagem" onClick={() => navigate(`/trips/${trip.id}/checklist`)} divider={false} />
+        <ListRow title="Câmbio" subtitle="Calculadora de conversão" onClick={() => navigate(`/trips/${trip.id}/cambio`)} divider={false} />
       </Card>
 
       <Card style={{ marginTop: 24 }}>

@@ -1,5 +1,41 @@
 # Registro de Sessões — Rumo
 
+## 2026-07-29 (cont. 3) — Fix câmbio, categorias de Planejamento editáveis, dashboard da viagem
+
+**Objetivo:** o Pedro perguntou como funciona a simulação de câmbio (se
+busca online) e, no meio da conversa, avisou que a Calculadora de Câmbio
+estava dando "câmbio indisponível" em uso real — investiguei e virou
+prioridade. Junto, pediu dois itens de produto: dashboard na tela principal
+da viagem com as informações-chave, e categorias de Planejamento
+cadastráveis/excluíveis por usuário (mantendo as existentes, exceto
+"praia"). Perguntei objetivamente onde encaixar o dashboard (nova aba x
+expandir a aba Viagem) e se implementava tudo na hora — o Pedro escolheu
+expandir a aba Viagem e implementar tudo já.
+
+**Decisões:** ver `ADR/0010-cambio-open-er-api-categorias-planejamento-dashboard.md`.
+
+**Alterações:**
+- **Fix do câmbio:** `exchangerate.host` (configurada desde a ADR 0007)
+  passou a exigir `access_key` paga — confirmado via `curl` direto na API
+  (`missing_access_key`). Trocado por `open.er-api.com` (gratuita, sem
+  chave, boa cobertura de moedas sul-americanas). `web/src/lib/fx.ts`,
+  `.env.example`, `web/.env.local` e `docs/architecture.md` atualizados.
+  **Pendente:** atualizar `VITE_FX_API_URL` nas env vars de produção da
+  Vercel — variável `VITE_*` é embutida no build, o fix de código sozinho
+  não chega em produção.
+- **`rumo_planning_categories`** (nova tabela, mesmo padrão de
+  `rumo_budget_categories`): categorias de Planejamento por viagem,
+  cadastráveis/excluíveis via UI em `PlanningPage.tsx`. `check` fixo de
+  `rumo_planning_options.segment` removido; toda viagem nova semeada com
+  hospedagem/transporte/restaurante/atividade/outro (sem "praia").
+- **Dashboard na aba "Viagem"** (`TripDetailPage.tsx`): contagem regressiva,
+  orçamento (gasto x planejado com barra de progresso), próximo dia do
+  roteiro, progresso do checklist — cada um navegando pra tela
+  correspondente.
+- `npm run lint`, `npx vitest run` (24/24) e `npx tsc -b && vite build`
+  rodaram limpos. Verificação em navegador ficou incompleta — ver nota na
+  ADR 0010 e em `Pendencias.md`.
+
 ## 2026-07-29 (cont. 2) — Unificação Ideias+Logística em "Planejamento" + Checklist
 
 **Objetivo:** o Pedro pediu uma seção de planejamento parecida com a aba

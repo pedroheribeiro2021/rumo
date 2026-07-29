@@ -94,18 +94,28 @@ create table if not exists rumo_expense_splits (
   unique (expense_id, member_id)
 );
 
--- Planejamento: opções candidatas (hospedagem, transporte, restaurante, atividade,
--- praia...) pesquisadas pra comparar e decidir — por cidade, antes de saber o dia
--- exato, ou já vinculadas a um dia do roteiro. Unifica o que antes eram duas
--- tabelas separadas (rumo_itinerary_ideas + rumo_logistics_entries, ver ADR 0007);
+-- Categorias de planejamento por viagem (usuário cadastra/exclui as que quiser,
+-- mesmo padrão de rumo_budget_categories — ver ADR 0010). Toda viagem nova é
+-- semeada com hospedagem/transporte/restaurante/atividade/outro.
+create table if not exists rumo_planning_categories (
+  id uuid primary key default gen_random_uuid(),
+  trip_id uuid not null references rumo_trips(id) on delete cascade,
+  name text not null,
+  sort_order int default 0,
+  unique (trip_id, name)
+);
+
+-- Planejamento: opções candidatas (hospedagem, transporte, restaurante, atividade...)
+-- pesquisadas pra comparar e decidir — por cidade, antes de saber o dia exato, ou
+-- já vinculadas a um dia do roteiro. Unifica o que antes eram duas tabelas
+-- separadas (rumo_itinerary_ideas + rumo_logistics_entries, ver ADR 0007);
 -- consolidado na ADR 0009 depois de revisar como o Pedro planeja de verdade
 -- (opções de hotel comparadas por preço/cidade, não só ideias soltas de passeio).
 create table if not exists rumo_planning_options (
   id uuid primary key default gen_random_uuid(),
   trip_id uuid not null references rumo_trips(id) on delete cascade,
   day_id uuid references rumo_itinerary_days(id) on delete set null,
-  segment text not null default 'atividade'
-    check (segment in ('hospedagem', 'transporte', 'restaurante', 'atividade', 'praia', 'outro')),
+  segment text not null default 'atividade', -- referencia rumo_planning_categories.name por string, não FK (ADR 0010)
   title text not null,
   city text,                            -- ex.: "Cartagena" — pesquisa geralmente antecede o dia exato
   address text,
@@ -187,6 +197,7 @@ alter table rumo_expense_splits enable row level security;
 alter table rumo_price_watches enable row level security;
 alter table rumo_price_observations enable row level security;
 alter table rumo_planning_options enable row level security;
+alter table rumo_planning_categories enable row level security;
 alter table rumo_checklist_items enable row level security;
 
 -- Helper: viagens em que o usuário é membro
@@ -260,6 +271,7 @@ create policy "membros: observations" on rumo_price_observations for all to auth
   exists(select 1 from rumo_price_watches w where w.id = watch_id and rumo_is_trip_member(w.trip_id))
 );
 create policy "membros: planning options" on rumo_planning_options for all to authenticated using (rumo_is_trip_member(trip_id)) with check (rumo_is_trip_member(trip_id));
+create policy "membros: planning categories" on rumo_planning_categories for all to authenticated using (rumo_is_trip_member(trip_id)) with check (rumo_is_trip_member(trip_id));
 create policy "membros: checklist" on rumo_checklist_items for all to authenticated using (rumo_is_trip_member(trip_id)) with check (rumo_is_trip_member(trip_id));
 
 -- ---------- Storage: capa da viagem ----------

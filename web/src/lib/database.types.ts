@@ -1005,6 +1005,35 @@ export type Database = {
           },
         ]
       }
+      rumo_planning_categories: {
+        Row: {
+          id: string
+          name: string
+          sort_order: number | null
+          trip_id: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          sort_order?: number | null
+          trip_id: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          sort_order?: number | null
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rumo_planning_categories_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "rumo_trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rumo_planning_options: {
         Row: {
           address: string | null

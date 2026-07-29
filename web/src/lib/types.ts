@@ -25,6 +25,9 @@ export type ItineraryDay = Tables<'rumo_itinerary_days'>
 export type ItineraryDayInsert = TablesInsert<'rumo_itinerary_days'>
 export type ItineraryDayUpdate = TablesUpdate<'rumo_itinerary_days'>
 
+export type PlanningCategory = Tables<'rumo_planning_categories'>
+export type PlanningCategoryInsert = TablesInsert<'rumo_planning_categories'>
+
 export type PlanningOption = Tables<'rumo_planning_options'>
 export type PlanningOptionInsert = TablesInsert<'rumo_planning_options'>
 export type PlanningOptionUpdate = TablesUpdate<'rumo_planning_options'>

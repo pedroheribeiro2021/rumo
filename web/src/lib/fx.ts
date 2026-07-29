@@ -5,9 +5,10 @@ export async function fetchFxRate(from: string, to: string): Promise<number | nu
   if (!base) return null
 
   try {
-    const res = await fetch(`${base}/latest?base=${from}&symbols=${to}`)
+    const res = await fetch(`${base}/v6/latest/${from}`)
     if (!res.ok) return null
     const data = await res.json()
+    if (data?.result !== 'success') return null
     const rate = data?.rates?.[to]
     return typeof rate === 'number' ? rate : null
   } catch {

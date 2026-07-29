@@ -11,22 +11,14 @@ import {
   usePromotePlanningOption,
   useUpdatePlanningOption,
 } from '../hooks/usePlanningOptions'
+import { useCreatePlanningCategory, useDeletePlanningCategory, usePlanningCategories } from '../hooks/usePlanningCategories'
 import type { PlanningOption } from '../lib/types'
 import { groupByCity } from '../lib/planning'
 import { formatMoney as money } from '../lib/format'
 import { Button, Card, CurrencySelect, EmptyState, Fab, Input, LoadingState, Modal, StatusChip, Tabs } from '../components/ui'
 
-const SEGMENTS = [
-  { value: 'hospedagem', label: 'Hospedagem' },
-  { value: 'transporte', label: 'Transporte' },
-  { value: 'restaurante', label: 'Restaurante' },
-  { value: 'atividade', label: 'Atividade' },
-  { value: 'praia', label: 'Praia' },
-  { value: 'outro', label: 'Outro' },
-]
-
 function segmentLabel(value: string) {
-  return SEGMENTS.find((s) => s.value === value)?.label ?? value
+  return value ? value.charAt(0).toUpperCase() + value.slice(1) : value
 }
 
 function formatDay(dayDate: string | null) {
@@ -57,10 +49,13 @@ export function PlanningPage() {
   const { data: members } = useTripMembers(tripId)
   const { data: days } = useItineraryDays(tripId)
   const { data: options, isLoading } = usePlanningOptions(tripId)
+  const { data: categories } = usePlanningCategories(tripId)
   const createOption = useCreatePlanningOption(tripId!)
   const updateOption = useUpdatePlanningOption(tripId!)
   const deleteOption = useDeletePlanningOption(tripId!)
   const promoteOption = usePromotePlanningOption(tripId!)
+  const createCategory = useCreatePlanningCategory(tripId!)
+  const deleteCategory = useDeletePlanningCategory(tripId!)
 
   const myMemberId = useMemo(() => members?.find((m) => m.profile_id === session?.user.id)?.id, [members, session])
 
@@ -68,6 +63,7 @@ export function PlanningPage() {
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<PlanningOption | null>(null)
   const [form, setForm] = useState(EMPTY_FORM)
+  const [newCategoryName, setNewCategoryName] = useState('')
 
   const filtered = useMemo(
     () => (options ?? []).filter((o) => segmentFilter === 'all' || o.segment === segmentFilter),
@@ -83,8 +79,15 @@ export function PlanningPage() {
 
   function openCreate() {
     setEditing(null)
-    setForm(EMPTY_FORM)
+    setForm({ ...EMPTY_FORM, segment: categories?.[0]?.name ?? 'outro' })
     setOpen(true)
+  }
+
+  async function handleAddCategory() {
+    const name = newCategoryName.trim()
+    if (!name) return
+    await createCategory.mutateAsync(name)
+    setNewCategoryName('')
   }
 
   function openEdit(option: PlanningOption) {
@@ -140,10 +143,45 @@ export function PlanningPage() {
       <h1 style={{ margin: '6px 0 16px', fontSize: 'var(--text-h1)', color: 'var(--color-text-primary)' }}>Planejamento</h1>
 
       <Tabs
-        items={[{ value: 'all', label: 'Todas' }, ...SEGMENTS]}
+        items={[{ value: 'all', label: 'Todas' }, ...(categories ?? []).map((c) => ({ value: c.name, label: segmentLabel(c.name) }))]}
         value={segmentFilter}
         onChange={setSegmentFilter}
       />
+
+      <Card padding="sm" style={{ marginTop: 12 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {categories?.map((c) => (
+            <span
+              key={c.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                borderRadius: 'var(--radius-full)',
+                background: 'var(--color-surface-sunken)',
+                padding: '6px 10px',
+                fontSize: 12,
+                color: 'var(--color-text-secondary)',
+              }}
+            >
+              {segmentLabel(c.name)}
+              <button
+                onClick={() => deleteCategory.mutate(c.id)}
+                aria-label={`Excluir categoria ${c.name}`}
+                style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--color-text-tertiary)', fontSize: 13, padding: 0, lineHeight: 1 }}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+          <Input placeholder="+ nova categoria" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} style={{ flex: 1 }} />
+          <Button type="button" variant="secondary" onClick={handleAddCategory} loading={createCategory.isPending}>
+            Cadastrar
+          </Button>
+        </div>
+      </Card>
 
       <div style={{ marginTop: 16 }}>
         {isLoading && <LoadingState />}
@@ -255,11 +293,11 @@ export function PlanningPage() {
           <Input required autoFocus placeholder="Nome (ex.: Hotel OZ, La Cevichería...)" value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} />
 
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {SEGMENTS.map((s) => (
+            {categories?.map((s) => (
               <button
-                key={s.value}
+                key={s.id}
                 type="button"
-                onClick={() => setForm((f) => ({ ...f, segment: s.value }))}
+                onClick={() => setForm((f) => ({ ...f, segment: s.name }))}
                 style={{
                   borderRadius: 'var(--radius-full)',
                   border: 'none',
@@ -268,11 +306,11 @@ export function PlanningPage() {
                   fontWeight: 600,
                   fontFamily: 'var(--font-sans)',
                   cursor: 'pointer',
-                  background: form.segment === s.value ? 'var(--color-brand)' : 'var(--color-surface-sunken)',
-                  color: form.segment === s.value ? '#fff' : 'var(--color-text-secondary)',
+                  background: form.segment === s.name ? 'var(--color-brand)' : 'var(--color-surface-sunken)',
+                  color: form.segment === s.name ? '#fff' : 'var(--color-text-secondary)',
                 }}
               >
-                {s.label}
+                {segmentLabel(s.name)}
               </button>
             ))}
           </div>
