@@ -11,6 +11,8 @@ import { TripDetailPage } from './pages/TripDetailPage'
 import { ExpensesPage } from './pages/ExpensesPage'
 import { BudgetPage } from './pages/BudgetPage'
 import { ItineraryPage } from './pages/ItineraryPage'
+import { LogisticsPage } from './pages/LogisticsPage'
+import { CurrencyCalculatorPage } from './pages/CurrencyCalculatorPage'
 import { PriceWatchesPage } from './pages/PriceWatchesPage'
 import { PriceWatchDetailPage } from './pages/PriceWatchDetailPage'
 
@@ -68,6 +70,26 @@ function App() {
                 <RequireAuth>
                   <AppLayout>
                     <ItineraryPage />
+                  </AppLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/trips/:tripId/logistica"
+              element={
+                <RequireAuth>
+                  <AppLayout>
+                    <LogisticsPage />
+                  </AppLayout>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/trips/:tripId/cambio"
+              element={
+                <RequireAuth>
+                  <AppLayout>
+                    <CurrencyCalculatorPage />
                   </AppLayout>
                 </RequireAuth>
               }

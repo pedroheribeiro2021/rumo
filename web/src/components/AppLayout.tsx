@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { AppBottomNav } from './AppBottomNav'
 
 export function AppLayout({ children }: { children: ReactNode }) {
   return (
@@ -35,6 +36,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
       <main style={{ margin: '0 auto', maxWidth: 'var(--container-max)', padding: '20px 16px 100px' }}>{children}</main>
+      <AppBottomNav />
     </div>
   )
 }

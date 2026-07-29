@@ -12,6 +12,41 @@ export interface Transfer {
   amount: number
 }
 
+export interface ExpenseForBalance {
+  paid_by: string | null
+  amount: number
+  fx_to_base: number
+  splits: { member_id: string; share: number }[]
+}
+
+export interface MemberForBalance {
+  id: string
+  display_name: string
+}
+
+// Saldo de cada membro (pago - devido). Gastos sem nenhum split (divisão
+// desativada) ficam de fora inteiramente — não geram nem crédito nem débito,
+// já que ninguém foi designado a pagar a parte de ninguém.
+export function computeBalances(expenses: ExpenseForBalance[], members: MemberForBalance[]): MemberBalance[] {
+  const paid: Record<string, number> = {}
+  const owed: Record<string, number> = {}
+
+  for (const e of expenses) {
+    if (e.splits.length === 0) continue
+    const amountBase = e.amount * e.fx_to_base
+    if (e.paid_by) paid[e.paid_by] = (paid[e.paid_by] ?? 0) + amountBase
+    for (const s of e.splits) {
+      owed[s.member_id] = (owed[s.member_id] ?? 0) + s.share
+    }
+  }
+
+  return members.map((m) => ({
+    memberId: m.id,
+    name: m.display_name,
+    balance: Math.round(((paid[m.id] ?? 0) - (owed[m.id] ?? 0)) * 100) / 100,
+  }))
+}
+
 const EPSILON = 0.005
 
 // Minimiza o número de transferências casando o maior credor com o maior devedor a cada passo.

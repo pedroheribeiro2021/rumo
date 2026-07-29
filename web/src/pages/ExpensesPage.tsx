@@ -13,10 +13,10 @@ import {
 } from '../hooks/useExpenses'
 import { useAuth } from '../contexts/AuthContext'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
-import { computeSettlement, type MemberBalance } from '../lib/settlement'
+import { useBudgetCategories } from '../hooks/useBudgetCategories'
+import { computeBalances, computeSettlement } from '../lib/settlement'
 import { fetchFxRate } from '../lib/fx'
 import { formatMoney as money } from '../lib/format'
-import { EXPENSE_CATEGORIES as CATEGORIES } from '../lib/categories'
 import { dequeueExpense } from '../lib/offlineQueue'
 import { Button, Card, CurrencySelect, EmptyState, Fab, Input, LoadingState, Modal, OfflineBanner, StatusChip } from '../components/ui'
 
@@ -25,6 +25,7 @@ export function ExpensesPage() {
   const { session } = useAuth()
   const { data: trip } = useTrip(tripId)
   const { data: members } = useTripMembers(tripId)
+  const { data: categories } = useBudgetCategories(tripId)
   const { data: expenses, isLoading } = useExpenses(tripId)
   const createExpense = useCreateExpense(tripId!)
   const deleteExpense = useDeleteExpense(tripId!)
@@ -42,7 +43,7 @@ export function ExpensesPage() {
   const [fxLoading, setFxLoading] = useState(false)
   const [spentOn, setSpentOn] = useState(() => new Date().toISOString().slice(0, 10))
   const [paidBy, setPaidBy] = useState<string | null>(null)
-  const [splitMode, setSplitMode] = useState<'equal' | 'custom'>('equal')
+  const [splitMode, setSplitMode] = useState<'none' | 'equal' | 'custom'>('none')
   const [customShares, setCustomShares] = useState<Record<string, string>>({})
   const [submitError, setSubmitError] = useState('')
 
@@ -52,23 +53,7 @@ export function ExpensesPage() {
 
   const total = useMemo(() => (expenses ?? []).reduce((sum, e) => sum + e.amount * e.fx_to_base, 0), [expenses])
 
-  const balances: MemberBalance[] = useMemo(() => {
-    if (!members) return []
-    const paid: Record<string, number> = {}
-    const owed: Record<string, number> = {}
-    for (const e of expenses ?? []) {
-      const amountBase = e.amount * e.fx_to_base
-      if (e.paid_by) paid[e.paid_by] = (paid[e.paid_by] ?? 0) + amountBase
-      for (const s of e.splits) {
-        owed[s.member_id] = (owed[s.member_id] ?? 0) + s.share
-      }
-    }
-    return members.map((m) => ({
-      memberId: m.id,
-      name: m.display_name,
-      balance: Math.round(((paid[m.id] ?? 0) - (owed[m.id] ?? 0)) * 100) / 100,
-    }))
-  }, [members, expenses])
+  const balances = useMemo(() => (members ? computeBalances(expenses ?? [], members) : []), [members, expenses])
 
   const transfers = useMemo(() => computeSettlement(balances), [balances])
   const pendingCount = useMemo(() => (expenses ?? []).filter((e) => e.pending).length, [expenses])
@@ -102,7 +87,7 @@ export function ExpensesPage() {
     setFxRate(1)
     setSpentOn(new Date().toISOString().slice(0, 10))
     setPaidBy(null)
-    setSplitMode('equal')
+    setSplitMode('none')
     setCustomShares({})
     setSubmitError('')
     setOpen(false)
@@ -118,13 +103,13 @@ export function ExpensesPage() {
 
     const amountBaseCents = Math.round(amountNum * fxRate * 100)
 
-    let splits
+    let splits: ReturnType<typeof equalSplit> = []
     if (splitMode === 'equal') {
       splits = equalSplit(
         amountBaseCents,
         members.map((m) => m.id),
       )
-    } else {
+    } else if (splitMode === 'custom') {
       const entries = members.map((m) => ({
         memberId: m.id,
         shareCents: Math.round(parseFloat((customShares[m.id] ?? '0').replace(',', '.') || '0') * 100),
@@ -242,11 +227,11 @@ export function ExpensesPage() {
           <Input placeholder="Descrição (opcional)" value={description} onChange={(e) => setDescription(e.target.value)} />
 
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {CATEGORIES.map((c) => (
+            {categories?.map((c) => (
               <button
-                key={c}
+                key={c.id}
                 type="button"
-                onClick={() => setCategory(c)}
+                onClick={() => setCategory(c.name)}
                 style={{
                   borderRadius: 'var(--radius-full)',
                   border: 'none',
@@ -255,11 +240,11 @@ export function ExpensesPage() {
                   fontWeight: 600,
                   fontFamily: 'var(--font-sans)',
                   cursor: 'pointer',
-                  background: category === c ? 'var(--color-brand)' : 'var(--color-surface-sunken)',
-                  color: category === c ? '#fff' : 'var(--color-text-secondary)',
+                  background: category === c.name ? 'var(--color-brand)' : 'var(--color-surface-sunken)',
+                  color: category === c.name ? '#fff' : 'var(--color-text-secondary)',
                 }}
               >
-                {c}
+                {c.name}
               </button>
             ))}
           </div>
@@ -326,7 +311,11 @@ export function ExpensesPage() {
               </label>
 
               <div>
-                <div style={{ display: 'flex', gap: 12, fontSize: 'var(--text-body-sm)', color: 'var(--color-text-secondary)' }}>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 'var(--text-body-sm)', color: 'var(--color-text-secondary)' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <input type="radio" checked={splitMode === 'none'} onChange={() => setSplitMode('none')} />
+                    Não dividir
+                  </label>
                   <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <input type="radio" checked={splitMode === 'equal'} onChange={() => setSplitMode('equal')} />
                     Dividir igual
@@ -389,6 +378,11 @@ function ExpenseRow({
           {expense.pending && (
             <span style={{ marginLeft: 6, display: 'inline-block', verticalAlign: 'middle' }}>
               <StatusChip tone="warn">pendente</StatusChip>
+            </span>
+          )}
+          {!expense.pending && expense.splits.length === 0 && (
+            <span style={{ marginLeft: 6, display: 'inline-block', verticalAlign: 'middle' }}>
+              <StatusChip tone="neutral">sem divisão</StatusChip>
             </span>
           )}
         </p>

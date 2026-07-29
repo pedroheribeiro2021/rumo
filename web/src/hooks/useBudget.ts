@@ -7,7 +7,12 @@ export function useBudgetItems(tripId: string | undefined) {
     queryKey: ['budget-items', tripId],
     enabled: !!tripId,
     queryFn: async (): Promise<BudgetItem[]> => {
-      const { data, error } = await supabase.from('rumo_budget_items').select('*').eq('trip_id', tripId!).order('category')
+      const { data, error } = await supabase
+        .from('rumo_budget_items')
+        .select('*')
+        .eq('trip_id', tripId!)
+        .order('day_date', { nullsFirst: false })
+        .order('category')
       if (error) throw error
       return data
     },
@@ -18,7 +23,7 @@ export function useCreateBudgetItem(tripId: string) {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (input: { category: string; planned_amount: number; currency: string }) => {
+    mutationFn: async (input: { category: string | null; day_date: string | null; planned_amount: number; currency: string }) => {
       const { data, error } = await supabase
         .from('rumo_budget_items')
         .insert({ trip_id: tripId, ...input })

@@ -33,6 +33,11 @@ Fonte da verdade: `supabase/schema.sql`. Tabelas: profiles, trips, trip_members,
 ## Semente
 `prototype/index.html` é um protótipo single-file já funcional (monitor, roteiro, orçamento, calc. de milhas) usado como referência de UX e regras.
 
+## Fluxo de trabalho (a partir de 2026-07-29)
+- **Nunca commitar direto em `main`.** Criar branch (`feat/...`, `fix/...`) e abrir PR — mesmo trabalhando sozinho, é assim que o CI (`.github/workflows/ci.yml`) protege a branch principal.
+- CI roda lint (`oxlint`), testes (`vitest`) e build (`tsc -b && vite build`) em todo push/PR pra `main`. Rodar `npm run lint && npm run test && npm run build` localmente antes de abrir PR.
+- Lógica de negócio com risco de bug silencioso (cálculos, agregações) deve viver em função pura testável (`web/src/lib/*.ts`), não direto num `useMemo` de página — ver `computeBalances`/`computeSpentByCategory` como exemplo (ADR 0008).
+
 ## Não fazer
 - Não colocar segredos no repo (use `.env`, veja `.env.example`).
 - Não bloquear o lançamento de gasto atrás de conexão — tem que funcionar offline.

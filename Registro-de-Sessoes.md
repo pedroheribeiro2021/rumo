@@ -1,5 +1,97 @@
 # Registro de Sessões — Rumo
 
+## 2026-07-29 (cont.) — CI no GitHub + testes automatizados
+
+**Objetivo:** depois do pacote de mudanças da sessão anterior (mesmo dia), o
+Pedro pediu CI no GitHub e testes automatizados — motivado em parte por eu
+não ter conseguido testar visualmente no navegador (extensão Claude in Chrome
+sem permissão de host pra `localhost` nesta máquina). Decidiu também que,
+daqui pra frente, não vamos mais commitar direto em `main` — passamos a usar
+branch + PR.
+
+**Decisões:** ver `ADR/0008-testes-automatizados-e-ci.md`.
+
+**Alterações:**
+- `.github/workflows/ci.yml` (novo): lint (oxlint) + testes (vitest) + build
+  em todo push/PR pra `main`.
+- `vitest` + `@testing-library/react` + `@testing-library/jest-dom` + `jsdom`
+  como dev deps; `vite.config.ts` com bloco `test` (import de `defineConfig`
+  trocado pra `vitest/config`); script `npm run test`.
+- **Extraído lógica de negócio pra funções puras testáveis** (antes viviam
+  dentro de `useMemo` nas páginas): `computeBalances` (novo, em
+  `lib/settlement.ts`, extraído de `ExpensesPage.tsx` — cobre exatamente o
+  bug do acerto de contas corrigido na sessão anterior) e
+  `computeSpentByCategory`/`computeSpentByDay` (novo, `lib/budget.ts`,
+  extraído de `BudgetPage.tsx`).
+- 4 arquivos de teste, 20 testes: `settlement.test.ts`, `budget.test.ts`,
+  `format.test.ts`, `ProgressBar.test.tsx` (este último prova que o setup
+  também renderiza componentes React via `jsdom`, não só funções puras).
+
+**Validação:** `npm run lint`, `npm run test` (20/20) e `npm run build` (com
+env vars placeholder do Supabase, igual à CI) rodados localmente antes do
+commit.
+
+**Arquivos modificados/criados:** `.github/workflows/ci.yml` (novo),
+`web/vite.config.ts`, `web/package.json`, `web/src/test/setup.ts` (novo),
+`web/src/lib/{settlement,budget}.ts`, `web/src/lib/*.test.ts` (novos),
+`web/src/components/ui/ProgressBar.test.tsx` (novo),
+`web/src/pages/{ExpensesPage,BudgetPage}.tsx`, `ADR/0008-*.md` (novo),
+`Pendencias.md`, `Registro-de-Sessoes.md`.
+
+---
+
+## 2026-07-29 — Navbar, orçamento flexível, divisão opcional, edição e 2 módulos novos
+
+**Objetivo:** o Pedro trouxe uma lista de 9 pedidos usando o app no dia a dia
+(viagem real de Foz do Iguaçu): navbar de verdade, categorias de orçamento
+cadastráveis, divisão de gasto opcional, orçamento por dia, calculadora de
+câmbio, editar viagem/roteiro, módulo de ideias de roteiro (planos A/B/C),
+cadastro de hospedagens/aeroportos, e upload de capa (prioridade mínima).
+Entrei em modo de planejamento (Plan Mode), rodei 3 agentes de exploração em
+paralelo pra levantar o estado atual do código, esclareci 3 pontos ambíguos
+com `AskUserQuestion` (base de dados pra futuras viagens = já coberto;
+categorias por viagem, não globais; navbar com 5 abas, não 6) e implementei
+tudo em 8 fases sequenciais.
+
+**Decisões e detalhes técnicos:** ver `ADR/0007-navbar-orcamento-flexivel-divisao-opcional-modulos-novos.md`.
+
+**Alterações principais:**
+- `AppBottomNav.tsx` (novo) + `AppLayout.tsx`: navbar fixa reaproveitando o
+  `BottomNav` do design system (existia, nunca tinha sido usado).
+- `useUpdateItineraryDay` (novo) + modais de edição em `TripDetailPage.tsx`
+  (viagem, usando `useUpdateTrip` que já existia mas nunca era chamado) e
+  `ItineraryPage.tsx` (dia, incluindo campo `title` até então morto).
+- `ExpensesPage.tsx`/`useExpenses.ts`: modo "não dividir" (default) além de
+  igual/manual; **corrigido junto** um bug latente no acerto de contas que
+  creditaria o valor cheio ao pagador mesmo sem nenhum split.
+- `rumo_budget_categories` (nova tabela, por viagem) + `day_date` em
+  `rumo_budget_items`: `BudgetPage.tsx` ganhou cadastro de categoria inline e
+  seção "Por dia"; `ExpensesPage.tsx` passou a usar as mesmas categorias.
+- `rumo_logistics_entries` (nova, hospedagens+aeroportos com discriminador
+  `entry_type`) → `LogisticsPage.tsx` em `/trips/:tripId/logistica`.
+- `rumo_itinerary_ideas` (nova, ideias/planos A-B-C) → sub-aba "Ideias" em
+  `ItineraryPage.tsx`, com `usePromoteIdea` escrevendo o conteúdo escolhido
+  de volta no dia do roteiro.
+- `CurrencyCalculatorPage.tsx` (nova) em `/trips/:tripId/cambio`, reaproveita
+  `fetchFxRate` já existente.
+- `cover_image_url` em `rumo_trips` + bucket Storage `rumo-trip-covers` +
+  `useUploadTripCover`: upload de imagem de fundo no cabeçalho da viagem.
+
+**Validação:** `tsc --noEmit` e `npm run build` limpos ao final de cada fase;
+`get_advisors` (security) rodado depois de cada migração — nenhuma lacuna de
+RLS nova introduzida.
+
+**Arquivos modificados/criados:** ver lista completa na ADR 0007. Resumo:
+`web/src/components/AppBottomNav.tsx` (novo), `AppLayout.tsx`,
+`web/src/pages/{TripDetailPage,ItineraryPage,BudgetPage,ExpensesPage}.tsx`,
+`web/src/pages/{LogisticsPage,CurrencyCalculatorPage}.tsx` (novos),
+`web/src/hooks/{useBudgetCategories,useLogistics,useItineraryIdeas}.ts`
+(novos), `useItinerary.ts`, `useBudget.ts`, `useTrips.ts`, `useExpenses.ts`,
+`web/src/lib/types.ts`, `web/src/lib/database.types.ts`, `supabase/schema.sql`,
+`web/src/App.tsx`, `ADR/0007-*.md` (novo), `Pendencias.md`.
+
+---
+
 ## 2026-07-28 — Reset de senha + recuperação de senha (OTP)
 
 **Objetivo:** Pedro esqueceu a senha; resetei direto no banco (a pedido, pra

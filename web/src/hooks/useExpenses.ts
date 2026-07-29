@@ -97,17 +97,19 @@ async function insertExpenseOnServer(input: CreateExpenseInput, createdBy: strin
     .single()
   if (error) throw error
 
-  const splitRows = input.splits.map((s) => ({
-    expense_id: expense.id,
-    member_id: s.memberId,
-    share: Math.round(s.shareCents) / 100,
-  }))
+  if (input.splits.length > 0) {
+    const splitRows = input.splits.map((s) => ({
+      expense_id: expense.id,
+      member_id: s.memberId,
+      share: Math.round(s.shareCents) / 100,
+    }))
 
-  const { error: splitsError } = await supabase.from('rumo_expense_splits').insert(splitRows)
-  if (splitsError) {
-    // compensação: sem o rateio, o gasto fica incompleto — melhor remover
-    await supabase.from('rumo_expenses').delete().eq('id', expense.id)
-    throw splitsError
+    const { error: splitsError } = await supabase.from('rumo_expense_splits').insert(splitRows)
+    if (splitsError) {
+      // compensação: sem o rateio, o gasto fica incompleto — melhor remover
+      await supabase.from('rumo_expenses').delete().eq('id', expense.id)
+      throw splitsError
+    }
   }
 
   return expense

@@ -1,18 +1,28 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { useTrip } from '../hooks/useTrips'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useTrip, useUpdateTrip, useUploadTripCover } from '../hooks/useTrips'
 import { useAddTripMember, useInviteTripMember, useRemoveTripMember, useTripMembers } from '../hooks/useTripMembers'
-import { Avatar, Button, Card, Input, ListRow, LoadingState, StatusChip } from '../components/ui'
+import { Avatar, Button, Card, CurrencySelect, Input, ListRow, LoadingState, Modal, StatusChip } from '../components/ui'
 
 export function TripDetailPage() {
   const { tripId } = useParams<{ tripId: string }>()
+  const navigate = useNavigate()
   const { data: trip, isLoading } = useTrip(tripId)
   const { data: members } = useTripMembers(tripId)
   const addMember = useAddTripMember(tripId!)
   const inviteMember = useInviteTripMember(tripId!)
   const removeMember = useRemoveTripMember(tripId!)
+  const updateTrip = useUpdateTrip()
+  const uploadCover = useUploadTripCover(tripId!)
   const [newMemberName, setNewMemberName] = useState('')
   const [newMemberEmail, setNewMemberEmail] = useState('')
+
+  const [editOpen, setEditOpen] = useState(false)
+  const [editName, setEditName] = useState('')
+  const [editDestination, setEditDestination] = useState('')
+  const [editStartDate, setEditStartDate] = useState('')
+  const [editEndDate, setEditEndDate] = useState('')
+  const [editCurrency, setEditCurrency] = useState('BRL')
 
   if (isLoading) return <LoadingState />
   if (!trip) return <p style={{ fontSize: 'var(--text-body-sm)', color: 'var(--color-text-secondary)' }}>Viagem não encontrada.</p>
@@ -29,34 +39,116 @@ export function TripDetailPage() {
     setNewMemberEmail('')
   }
 
+  function openEdit() {
+    setEditName(trip!.name)
+    setEditDestination(trip!.destination ?? '')
+    setEditStartDate(trip!.start_date ?? '')
+    setEditEndDate(trip!.end_date ?? '')
+    setEditCurrency(trip!.base_currency)
+    setEditOpen(true)
+  }
+
+  async function handleEditSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    await updateTrip.mutateAsync({
+      id: trip!.id,
+      name: editName,
+      destination: editDestination || null,
+      start_date: editStartDate || null,
+      end_date: editEndDate || null,
+      base_currency: editCurrency,
+    })
+    setEditOpen(false)
+  }
+
+  async function handleCoverChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (file) await uploadCover.mutateAsync(file)
+    e.target.value = ''
+  }
+
   return (
     <div>
       <Link to="/" style={{ fontSize: 'var(--text-body-sm)', color: 'var(--color-text-secondary)' }}>
         ← Viagens
       </Link>
 
-      <div style={{ marginTop: 6 }}>
-        <h1 style={{ margin: 0, fontSize: 'var(--text-h1)', color: 'var(--color-text-primary)' }}>{trip.name}</h1>
-        <p style={{ margin: '4px 0 0', color: 'var(--color-text-secondary)', fontSize: 'var(--text-body-sm)' }}>
-          {trip.destination ? `${trip.destination} · ` : ''}
-          {trip.start_date ?? '?'} a {trip.end_date ?? '?'} · moeda base {trip.base_currency}
-        </p>
+      <div
+        style={{
+          marginTop: 6,
+          padding: trip.cover_image_url ? 16 : 0,
+          borderRadius: 'var(--radius-lg)',
+          backgroundImage: trip.cover_image_url ? `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url(${trip.cover_image_url})` : undefined,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: 'var(--text-h1)', color: trip.cover_image_url ? '#fff' : 'var(--color-text-primary)' }}>{trip.name}</h1>
+            <p style={{ margin: '4px 0 0', color: trip.cover_image_url ? 'rgba(255,255,255,0.85)' : 'var(--color-text-secondary)', fontSize: 'var(--text-body-sm)' }}>
+              {trip.destination ? `${trip.destination} · ` : ''}
+              {trip.start_date ?? '?'} a {trip.end_date ?? '?'} · moeda base {trip.base_currency}
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            <label
+              aria-label="Alterar capa"
+              style={{
+                border: '1px solid var(--color-border)',
+                background: 'var(--color-surface)',
+                borderRadius: 'var(--radius-full)',
+                width: 36,
+                height: 36,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                fontSize: 16,
+              }}
+            >
+              🖼️
+              <input type="file" accept="image/*" onChange={handleCoverChange} style={{ display: 'none' }} />
+            </label>
+            <button
+              onClick={openEdit}
+              aria-label="Editar viagem"
+              style={{
+                border: '1px solid var(--color-border)',
+                background: 'var(--color-surface)',
+                borderRadius: 'var(--radius-full)',
+                width: 36,
+                height: 36,
+                flexShrink: 0,
+                cursor: 'pointer',
+                fontSize: 16,
+              }}
+            >
+              ✎
+            </button>
+          </div>
+        </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
-        <Link to={`/trips/${trip.id}/gastos`}>
-          <Button>Gastos</Button>
-        </Link>
-        <Link to={`/trips/${trip.id}/orcamento`}>
-          <Button variant="secondary">Orçamento</Button>
-        </Link>
-        <Link to={`/trips/${trip.id}/roteiro`}>
-          <Button variant="secondary">Roteiro</Button>
-        </Link>
-        <Link to={`/trips/${trip.id}/passagens`}>
-          <Button variant="secondary">Passagens</Button>
-        </Link>
-      </div>
+      <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Editar viagem">
+        <form onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <Input required placeholder="Nome da viagem" value={editName} onChange={(e) => setEditName(e.target.value)} />
+          <Input placeholder="Destino (opcional)" value={editDestination} onChange={(e) => setEditDestination(e.target.value)} />
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Input type="date" value={editStartDate} onChange={(e) => setEditStartDate(e.target.value)} style={{ flex: '1 1 140px' }} />
+            <Input type="date" value={editEndDate} onChange={(e) => setEditEndDate(e.target.value)} style={{ flex: '1 1 140px' }} />
+          </div>
+          <CurrencySelect label="Moeda base" value={editCurrency} onChange={(e) => setEditCurrency(e.target.value)} />
+          <Button type="submit" fullWidth loading={updateTrip.isPending}>
+            Salvar alterações
+          </Button>
+        </form>
+      </Modal>
+
+      <Card style={{ marginTop: 16 }} padding="sm">
+        <ListRow title="Passagens" subtitle="Monitor de preços" onClick={() => navigate(`/trips/${trip.id}/passagens`)} divider />
+        <ListRow title="Câmbio" subtitle="Calculadora de conversão" onClick={() => navigate(`/trips/${trip.id}/cambio`)} divider={false} />
+      </Card>
 
       <Card style={{ marginTop: 24 }}>
         <h2 style={{ margin: 0, fontSize: 'var(--text-h3)', color: 'var(--color-text-primary)' }}>Membros</h2>

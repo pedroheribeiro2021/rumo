@@ -18,8 +18,20 @@ export type Profile = Tables<'rumo_profiles'>
 export type BudgetItem = Tables<'rumo_budget_items'>
 export type BudgetItemInsert = TablesInsert<'rumo_budget_items'>
 
+export type BudgetCategory = Tables<'rumo_budget_categories'>
+export type BudgetCategoryInsert = TablesInsert<'rumo_budget_categories'>
+
 export type ItineraryDay = Tables<'rumo_itinerary_days'>
 export type ItineraryDayInsert = TablesInsert<'rumo_itinerary_days'>
+export type ItineraryDayUpdate = TablesUpdate<'rumo_itinerary_days'>
+
+export type ItineraryIdea = Tables<'rumo_itinerary_ideas'>
+export type ItineraryIdeaInsert = TablesInsert<'rumo_itinerary_ideas'>
+export type ItineraryIdeaUpdate = TablesUpdate<'rumo_itinerary_ideas'>
+
+export type LogisticsEntry = Tables<'rumo_logistics_entries'>
+export type LogisticsEntryInsert = TablesInsert<'rumo_logistics_entries'>
+export type LogisticsEntryUpdate = TablesUpdate<'rumo_logistics_entries'>
 
 export type PriceWatch = Tables<'rumo_price_watches'>
 export type PriceWatchInsert = TablesInsert<'rumo_price_watches'>

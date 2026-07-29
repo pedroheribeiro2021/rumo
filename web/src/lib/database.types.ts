@@ -765,24 +765,56 @@ export type Database = {
         }
         Relationships: []
       }
+      rumo_budget_categories: {
+        Row: {
+          id: string
+          name: string
+          sort_order: number | null
+          trip_id: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          sort_order?: number | null
+          trip_id: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          sort_order?: number | null
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rumo_budget_categories_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "rumo_trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rumo_budget_items: {
         Row: {
-          category: string
+          category: string | null
           currency: string
+          day_date: string | null
           id: string
           planned_amount: number
           trip_id: string
         }
         Insert: {
-          category: string
+          category?: string | null
           currency?: string
+          day_date?: string | null
           id?: string
           planned_amount?: number
           trip_id: string
         }
         Update: {
-          category?: string
+          category?: string | null
           currency?: string
+          day_date?: string | null
           id?: string
           planned_amount?: number
           trip_id?: string
@@ -938,6 +970,123 @@ export type Database = {
           },
         ]
       }
+      rumo_itinerary_ideas: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          day_id: string | null
+          id: string
+          idea_type: string
+          link: string | null
+          notes: string | null
+          status: string
+          title: string
+          trip_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          day_id?: string | null
+          id?: string
+          idea_type?: string
+          link?: string | null
+          notes?: string | null
+          status?: string
+          title: string
+          trip_id: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          day_id?: string | null
+          id?: string
+          idea_type?: string
+          link?: string | null
+          notes?: string | null
+          status?: string
+          title?: string
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rumo_itinerary_ideas_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "rumo_trip_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rumo_itinerary_ideas_day_id_fkey"
+            columns: ["day_id"]
+            isOneToOne: false
+            referencedRelation: "rumo_itinerary_days"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rumo_itinerary_ideas_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "rumo_trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rumo_logistics_entries: {
+        Row: {
+          address: string | null
+          check_in: string | null
+          check_out: string | null
+          created_at: string | null
+          currency: string | null
+          entry_type: string
+          id: string
+          link: string | null
+          name: string
+          notes: string | null
+          price: number | null
+          status: string
+          trip_id: string
+        }
+        Insert: {
+          address?: string | null
+          check_in?: string | null
+          check_out?: string | null
+          created_at?: string | null
+          currency?: string | null
+          entry_type: string
+          id?: string
+          link?: string | null
+          name: string
+          notes?: string | null
+          price?: number | null
+          status?: string
+          trip_id: string
+        }
+        Update: {
+          address?: string | null
+          check_in?: string | null
+          check_out?: string | null
+          created_at?: string | null
+          currency?: string | null
+          entry_type?: string
+          id?: string
+          link?: string | null
+          name?: string
+          notes?: string | null
+          price?: number | null
+          status?: string
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rumo_logistics_entries_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "rumo_trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rumo_price_observations: {
         Row: {
           id: string
@@ -1086,6 +1235,7 @@ export type Database = {
       rumo_trips: {
         Row: {
           base_currency: string
+          cover_image_url: string | null
           created_at: string | null
           destination: string | null
           end_date: string | null
@@ -1096,6 +1246,7 @@ export type Database = {
         }
         Insert: {
           base_currency?: string
+          cover_image_url?: string | null
           created_at?: string | null
           destination?: string | null
           end_date?: string | null
@@ -1106,6 +1257,7 @@ export type Database = {
         }
         Update: {
           base_currency?: string
+          cover_image_url?: string | null
           created_at?: string | null
           destination?: string | null
           end_date?: string | null
@@ -1280,6 +1432,12 @@ export type Database = {
           profile_id: string | null
           role: string
           trip_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "rumo_trip_members"
+          isOneToOne: true
+          isSetofReturn: false
         }
       }
       rumo_is_trip_member: { Args: { t: string }; Returns: boolean }

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import type { Trip, TripInsert, TripUpdate } from '../lib/types'
+import { EXPENSE_CATEGORIES } from '../lib/categories'
 
 export function useTrips() {
   const { session } = useAuth()
@@ -58,6 +59,11 @@ export function useCreateTrip() {
       })
       if (memberError) throw memberError
 
+      const { error: categoriesError } = await supabase
+        .from('rumo_budget_categories')
+        .insert(EXPENSE_CATEGORIES.map((name, i) => ({ trip_id: trip.id, name, sort_order: i })))
+      if (categoriesError) throw categoriesError
+
       return trip
     },
     onSuccess: () => {
@@ -78,6 +84,27 @@ export function useUpdateTrip() {
     onSuccess: (trip) => {
       queryClient.invalidateQueries({ queryKey: ['trips'] })
       queryClient.invalidateQueries({ queryKey: ['trips', trip.id] })
+    },
+  })
+}
+
+export function useUploadTripCover(tripId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const ext = file.name.split('.').pop() ?? 'jpg'
+      const path = `${tripId}/cover.${ext}`
+      const { error: uploadError } = await supabase.storage.from('rumo-trip-covers').upload(path, file, { upsert: true })
+      if (uploadError) throw uploadError
+
+      const { data } = supabase.storage.from('rumo-trip-covers').getPublicUrl(path)
+      const { error } = await supabase.from('rumo_trips').update({ cover_image_url: data.publicUrl }).eq('id', tripId)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trips'] })
+      queryClient.invalidateQueries({ queryKey: ['trips', tripId] })
     },
   })
 }

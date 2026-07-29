@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
-import type { ItineraryDay } from '../lib/types'
+import type { ItineraryDay, ItineraryDayUpdate } from '../lib/types'
 
 export function useItineraryDays(tripId: string | undefined) {
   return useQuery({
@@ -23,12 +23,33 @@ export function useCreateItineraryDay(tripId: string) {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (input: { day_date: string | null; base_city: string | null; country: string | null; notes: string | null }) => {
+    mutationFn: async (input: {
+      day_date: string | null
+      base_city: string | null
+      country: string | null
+      title: string | null
+      notes: string | null
+    }) => {
       const { data, error } = await supabase
         .from('rumo_itinerary_days')
         .insert({ trip_id: tripId, ...input })
         .select('*')
         .single()
+      if (error) throw error
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['itinerary-days', tripId] })
+    },
+  })
+}
+
+export function useUpdateItineraryDay(tripId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, ...changes }: ItineraryDayUpdate & { id: string }) => {
+      const { data, error } = await supabase.from('rumo_itinerary_days').update(changes).eq('id', id).select('*').single()
       if (error) throw error
       return data
     },

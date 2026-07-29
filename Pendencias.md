@@ -1,20 +1,16 @@
 # Pendências — Rumo
 
 ## Em aberto
+- **`npm audit` acusa 10 vulnerabilidades "high"** (descoberto ao instalar as
+  deps de teste em 2026-07-29): `react-router` 7.12.0–8.2.0 tem um CSRF
+  bypass em modo RSC (não usamos RSC, mas vale atualizar) e `brace-expansion`
+  (via `vite-plugin-pwa`→`workbox-build`) tem um DoS por expansão ilimitada.
+  Ambos exigem `npm audit fix --force` (downgrade breaking de
+  `react-router-dom` e `vite-plugin-pwa`) — não apliquei por ser fora do
+  escopo pedido; avaliar depois com calma.
 - **Relatórios + export CSV/PDF** — único item do Sprint 3 ainda não feito. Ver `docs/roadmap.md`.
 - **Convite por e-mail não envia e-mail de verdade** — só cria/vincula o registro (ADR 0005). O dono precisa avisar a pessoa fora do app pra criar conta com aquele e-mail. Automatizar exigiria Edge Function + serviço de e-mail transacional.
-- Nenhuma tela de edição de gasto/orçamento/roteiro/monitor existente ainda (só criar/excluir).
-- **Recuperação de senha: falta 1 ajuste manual seu pra funcionar de verdade.**
-  Implementei o fluxo (código de 6 dígitos, não link — ADR 0006), mas o
-  e-mail só vai mostrar o código depois que você trocar o template "Reset
-  Password" no dashboard do Supabase (Authentication → Email Templates) pra
-  usar `{{ .Token }}` em vez de `{{ .ConfirmationURL }}`. Sem isso, o e-mail
-  só tem o link (mesmo problema do scanner do ADR 0003/0004). Texto sugerido
-  no ADR 0006.
-- Orçamento compara categoria por string exata com `rumo_expenses.category`
-  — ambos usam a mesma lista fixa (`EXPENSE_CATEGORIES` em
-  `web/src/lib/categories.ts`), então funciona, mas se algum dia a categoria
-  virar texto livre em algum dos dois lados o cruzamento quebra.
+- Nenhuma tela de edição de **gasto** ou **item de orçamento** ainda (só criar/excluir) — viagem e dia de roteiro já ganharam edição na sessão de 2026-07-29 (ADR 0007), monitor de passagens também segue só criar/excluir.
 - **Sincronização offline só funciona com a tela de Gastos aberta.** Não é
   Background Sync de verdade (nível de service worker) — se o usuário lançar
   um gasto offline e fechar o app antes de reconectar, a sincronização só
@@ -30,6 +26,16 @@
   `hospedagem`/`alimentação`/`transporte` na tela de Orçamento.
 
 ## Concluído
+- **CI no GitHub (lint + testes + build) + testes automatizados (Vitest)** —
+  ver ADR 0008. Lógica de negócio arriscada (acerto de contas, orçamento por
+  categoria/dia) extraída pra funções puras com teste; testes de página
+  completa (mock de Supabase/react-query/router) e E2E ficaram fora do
+  escopo, ver ADR 0008.
+- **Navbar, orçamento flexível, divisão opcional, edição de viagem/roteiro e
+  2 módulos novos (Ideias de roteiro, Logística) + calculadora de câmbio +
+  upload de capa** — os 9 pedidos da sessão de 2026-07-29, ver ADR 0007.
+- **Recuperação de senha** — template "Reset Password" ajustado pelo Pedro no
+  dashboard do Supabase; fluxo de código validado ponta a ponta (ADR 0006).
 - Scaffold, Tailwind, Supabase, CRUD de Viagens, Gastos com divisão e
   acerto de contas, design system integrado, login por e-mail+senha,
   Orçamento, Roteiro — ver `Registro-de-Sessoes.md`.

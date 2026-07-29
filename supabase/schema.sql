@@ -23,6 +23,7 @@ create table if not exists rumo_trips (
   start_date date,
   end_date date,
   base_currency text not null default 'BRL',
+  cover_image_url text,                 -- imagem de fundo do cabeçalho (Storage bucket rumo-trip-covers)
   created_at timestamptz default now()
 );
 
@@ -49,13 +50,24 @@ create table if not exists rumo_itinerary_days (
   sort_order int default 0
 );
 
--- Orçamento planejado (pré-viagem)
+-- Categorias de orçamento por viagem (usuário cadastra as que quiser)
+create table if not exists rumo_budget_categories (
+  id uuid primary key default gen_random_uuid(),
+  trip_id uuid not null references rumo_trips(id) on delete cascade,
+  name text not null,
+  sort_order int default 0,
+  unique (trip_id, name)
+);
+
+-- Orçamento planejado (pré-viagem) — por categoria, por dia, ou ambos
 create table if not exists rumo_budget_items (
   id uuid primary key default gen_random_uuid(),
   trip_id uuid not null references rumo_trips(id) on delete cascade,
-  category text not null,               -- passagens, hospedagem, alimentação...
+  category text,                        -- passagens, hospedagem, alimentação...
+  day_date date,                        -- orçamento por dia (opcional, além de por categoria)
   planned_amount numeric(12,2) not null default 0,
-  currency text not null default 'BRL'
+  currency text not null default 'BRL',
+  constraint budget_items_has_dimension check (category is not null or day_date is not null)
 );
 
 -- Gastos reais (durante a viagem) — o coração do app
@@ -80,6 +92,38 @@ create table if not exists rumo_expense_splits (
   member_id uuid not null references rumo_trip_members(id) on delete cascade,
   share numeric(12,2) not null,         -- parte devida por este membro (moeda base)
   unique (expense_id, member_id)
+);
+
+-- Ideias de roteiro (restaurantes, pontos turísticos, atividades, "plano A/B/C")
+-- — brainstorm que depois vira o roteiro de fato via "promover" (aplicação, não trigger)
+create table if not exists rumo_itinerary_ideas (
+  id uuid primary key default gen_random_uuid(),
+  trip_id uuid not null references rumo_trips(id) on delete cascade,
+  day_id uuid references rumo_itinerary_days(id) on delete set null,
+  idea_type text not null default 'activity',  -- 'restaurant' | 'poi' | 'activity' | 'day_plan'
+  title text not null,
+  notes text,
+  link text,
+  status text not null default 'candidate',    -- 'candidate' | 'chosen' | 'discarded'
+  created_by uuid references rumo_trip_members(id) on delete set null,
+  created_at timestamptz default now()
+);
+
+-- Hospedagens e aeroportos — dado de referência pra apoiar decisões de roteiro
+create table if not exists rumo_logistics_entries (
+  id uuid primary key default gen_random_uuid(),
+  trip_id uuid not null references rumo_trips(id) on delete cascade,
+  entry_type text not null,             -- 'accommodation' | 'airport'
+  name text not null,
+  address text,
+  check_in date,
+  check_out date,
+  price numeric(12,2),
+  currency text default 'BRL',
+  link text,
+  notes text,
+  status text not null default 'candidate', -- 'candidate' | 'confirmed'
+  created_at timestamptz default now()
 );
 
 -- Monitor de passagens
@@ -132,11 +176,14 @@ alter table rumo_profiles enable row level security;
 alter table rumo_trips enable row level security;
 alter table rumo_trip_members enable row level security;
 alter table rumo_itinerary_days enable row level security;
+alter table rumo_budget_categories enable row level security;
 alter table rumo_budget_items enable row level security;
 alter table rumo_expenses enable row level security;
 alter table rumo_expense_splits enable row level security;
 alter table rumo_price_watches enable row level security;
 alter table rumo_price_observations enable row level security;
+alter table rumo_logistics_entries enable row level security;
+alter table rumo_itinerary_ideas enable row level security;
 
 -- Helper: viagens em que o usuário é membro
 create or replace function rumo_is_trip_member(t uuid) returns boolean
@@ -194,6 +241,7 @@ create policy "membros leem/escrevem trip" on rumo_trips
 -- Mesmo padrão para tabelas-filhas (via trip_id)
 create policy "membros: itinerary" on rumo_itinerary_days for all to authenticated using (rumo_is_trip_member(trip_id)) with check (rumo_is_trip_member(trip_id));
 create policy "membros: budget"    on rumo_budget_items  for all to authenticated using (rumo_is_trip_member(trip_id)) with check (rumo_is_trip_member(trip_id));
+create policy "membros: budget categories" on rumo_budget_categories for all to authenticated using (rumo_is_trip_member(trip_id)) with check (rumo_is_trip_member(trip_id));
 create policy "membros: expenses"  on rumo_expenses      for all to authenticated using (rumo_is_trip_member(trip_id)) with check (rumo_is_trip_member(trip_id));
 create policy "membros: members"   on rumo_trip_members  for all to authenticated using (rumo_is_trip_member(trip_id)) with check (rumo_is_trip_member(trip_id));
 create policy "membros: watches"   on rumo_price_watches for all to authenticated using (rumo_is_trip_member(trip_id)) with check (rumo_is_trip_member(trip_id));
@@ -207,3 +255,18 @@ create policy "membros: observations" on rumo_price_observations for all to auth
 ) with check (
   exists(select 1 from rumo_price_watches w where w.id = watch_id and rumo_is_trip_member(w.trip_id))
 );
+create policy "membros: logistics" on rumo_logistics_entries for all to authenticated using (rumo_is_trip_member(trip_id)) with check (rumo_is_trip_member(trip_id));
+create policy "membros: ideas" on rumo_itinerary_ideas for all to authenticated using (rumo_is_trip_member(trip_id)) with check (rumo_is_trip_member(trip_id));
+
+-- ---------- Storage: capa da viagem ----------
+-- Bucket público "rumo-trip-covers" (não é `create table`, aplicado à parte via
+-- Supabase; documentado aqui pra manter o schema.sql como referência completa):
+--   insert into storage.buckets (id, name, public) values ('rumo-trip-covers', 'rumo-trip-covers', true);
+-- Caminho de cada arquivo: `{trip_id}/cover.{ext}` — o primeiro segmento do path
+-- é o trip_id, usado pra reaproveitar rumo_is_trip_member via storage.foldername(name).
+create policy "membros: trip cover upload" on storage.objects
+  for all to authenticated using (
+    bucket_id = 'rumo-trip-covers' and rumo_is_trip_member((storage.foldername(name))[1]::uuid)
+  ) with check (
+    bucket_id = 'rumo-trip-covers' and rumo_is_trip_member((storage.foldername(name))[1]::uuid)
+  );
