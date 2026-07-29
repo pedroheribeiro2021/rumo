@@ -25,13 +25,12 @@ export type ItineraryDay = Tables<'rumo_itinerary_days'>
 export type ItineraryDayInsert = TablesInsert<'rumo_itinerary_days'>
 export type ItineraryDayUpdate = TablesUpdate<'rumo_itinerary_days'>
 
-export type ItineraryIdea = Tables<'rumo_itinerary_ideas'>
-export type ItineraryIdeaInsert = TablesInsert<'rumo_itinerary_ideas'>
-export type ItineraryIdeaUpdate = TablesUpdate<'rumo_itinerary_ideas'>
+export type PlanningOption = Tables<'rumo_planning_options'>
+export type PlanningOptionInsert = TablesInsert<'rumo_planning_options'>
+export type PlanningOptionUpdate = TablesUpdate<'rumo_planning_options'>
 
-export type LogisticsEntry = Tables<'rumo_logistics_entries'>
-export type LogisticsEntryInsert = TablesInsert<'rumo_logistics_entries'>
-export type LogisticsEntryUpdate = TablesUpdate<'rumo_logistics_entries'>
+export type ChecklistItem = Tables<'rumo_checklist_items'>
+export type ChecklistItemInsert = TablesInsert<'rumo_checklist_items'>
 
 export type PriceWatch = Tables<'rumo_price_watches'>
 export type PriceWatchInsert = TablesInsert<'rumo_price_watches'>

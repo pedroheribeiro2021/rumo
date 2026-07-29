@@ -1,5 +1,54 @@
 # Registro de Sessões — Rumo
 
+## 2026-07-29 (cont. 2) — Unificação Ideias+Logística em "Planejamento" + Checklist
+
+**Objetivo:** o Pedro pediu uma seção de planejamento parecida com a aba
+Ideias, dando hospedagem como exemplo ("opções de hotéis/airbnbs cidade XX")
+e anexou a planilha que usou pra planejar a última viagem
+(`Viagem .xlsx`, Cartagena/San Andrés) como referência — pedindo
+explicitamente pra eu trazer a ideia antes de implementar. Analisei as 7
+abas da planilha (a maioria já coberta pelo app) e propus unificar Ideias +
+Logística num módulo só ("Planejamento", com preço e cidade nas opções) mais
+um Checklist de bagagem (achado extra na planilha, não pedido originalmente).
+O Pedro confirmou os 3 pontos via pergunta estruturada. A partir daqui,
+primeira vez seguindo a nova convenção (branch + PR, não commit direto em
+`main`, combinada mais cedo no mesmo dia).
+
+**Decisões:** ver `ADR/0009-unificacao-planejamento-e-checklist.md`.
+
+**Alterações:**
+- `rumo_itinerary_ideas` + `rumo_logistics_entries` → **`rumo_planning_options`**
+  (nova tabela unificada, com `city`/`price`/`currency`/`date_from`/`date_to`
+  novos); as duas antigas foram dropadas (sem dados em produção ainda).
+  `usePromotePlanningOption` generaliza o "promover", com exclusividade
+  (descarta concorrentes) só por cidade+segmento pra `hospedagem`/
+  `transporte` — resolveu uma regressão que a generalização ingênua
+  causaria pra atividades/restaurantes do mesmo dia (ver ADR 0009).
+- **`rumo_checklist_items`** (nova): lista simples de bagagem/pré-viagem,
+  acessível por link na tela Viagem (não é aba da navbar).
+- Navbar: aba "Logística" virou **"Planejamento"**; sub-aba "Ideias" (que
+  vivia dentro de Roteiro) foi removida — o conteúdo mora inteiro na nova
+  página.
+- `lib/planning.ts` (`groupByCity`, novo, testado) — agrupamento por cidade
+  seguindo o padrão de extração de lógica pura da ADR 0008.
+
+**Validação:** `npm run lint`, `npm run test` (24/24) e `npm run build`
+(env vars placeholder) rodados localmente; `get_advisors` sem lacunas novas.
+
+**Arquivos modificados/criados:** `supabase/schema.sql`,
+`web/src/lib/database.types.ts`, `web/src/lib/types.ts`,
+`web/src/hooks/usePlanningOptions.ts` (novo, substitui `useItineraryIdeas.ts`
+e `useLogistics.ts`, removidos), `web/src/hooks/useChecklist.ts` (novo),
+`web/src/lib/planning.ts` + `planning.test.ts` (novos),
+`web/src/pages/PlanningPage.tsx` (novo, substitui `LogisticsPage.tsx`,
+removido), `web/src/pages/ChecklistPage.tsx` (novo),
+`web/src/pages/ItineraryPage.tsx` (revertido, tira a sub-aba Ideias),
+`web/src/pages/TripDetailPage.tsx`, `web/src/components/AppBottomNav.tsx`,
+`web/src/App.tsx`, `ADR/0009-*.md` (novo), `Pendencias.md`,
+`Registro-de-Sessoes.md`.
+
+---
+
 ## 2026-07-29 (cont.) — CI no GitHub + testes automatizados
 
 **Objetivo:** depois do pacote de mudanças da sessão anterior (mesmo dia), o

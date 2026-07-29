@@ -94,35 +94,39 @@ create table if not exists rumo_expense_splits (
   unique (expense_id, member_id)
 );
 
--- Ideias de roteiro (restaurantes, pontos turísticos, atividades, "plano A/B/C")
--- — brainstorm que depois vira o roteiro de fato via "promover" (aplicação, não trigger)
-create table if not exists rumo_itinerary_ideas (
+-- Planejamento: opções candidatas (hospedagem, transporte, restaurante, atividade,
+-- praia...) pesquisadas pra comparar e decidir — por cidade, antes de saber o dia
+-- exato, ou já vinculadas a um dia do roteiro. Unifica o que antes eram duas
+-- tabelas separadas (rumo_itinerary_ideas + rumo_logistics_entries, ver ADR 0007);
+-- consolidado na ADR 0009 depois de revisar como o Pedro planeja de verdade
+-- (opções de hotel comparadas por preço/cidade, não só ideias soltas de passeio).
+create table if not exists rumo_planning_options (
   id uuid primary key default gen_random_uuid(),
   trip_id uuid not null references rumo_trips(id) on delete cascade,
   day_id uuid references rumo_itinerary_days(id) on delete set null,
-  idea_type text not null default 'activity',  -- 'restaurant' | 'poi' | 'activity' | 'day_plan'
+  segment text not null default 'atividade'
+    check (segment in ('hospedagem', 'transporte', 'restaurante', 'atividade', 'praia', 'outro')),
   title text not null,
-  notes text,
+  city text,                            -- ex.: "Cartagena" — pesquisa geralmente antecede o dia exato
+  address text,
+  price numeric(12,2),
+  currency text default 'BRL',
+  date_from date,                       -- check-in / data do passeio / data do voo, conforme o segmento
+  date_to date,                         -- check-out, se aplicável
   link text,
-  status text not null default 'candidate',    -- 'candidate' | 'chosen' | 'discarded'
+  notes text,
+  status text not null default 'candidate' check (status in ('candidate', 'chosen', 'discarded')),
   created_by uuid references rumo_trip_members(id) on delete set null,
   created_at timestamptz default now()
 );
 
--- Hospedagens e aeroportos — dado de referência pra apoiar decisões de roteiro
-create table if not exists rumo_logistics_entries (
+-- Checklist de bagagem/pré-viagem (itens marcáveis, sem categorização)
+create table if not exists rumo_checklist_items (
   id uuid primary key default gen_random_uuid(),
   trip_id uuid not null references rumo_trips(id) on delete cascade,
-  entry_type text not null,             -- 'accommodation' | 'airport'
-  name text not null,
-  address text,
-  check_in date,
-  check_out date,
-  price numeric(12,2),
-  currency text default 'BRL',
-  link text,
-  notes text,
-  status text not null default 'candidate', -- 'candidate' | 'confirmed'
+  title text not null,
+  done boolean not null default false,
+  sort_order int default 0,
   created_at timestamptz default now()
 );
 
@@ -182,8 +186,8 @@ alter table rumo_expenses enable row level security;
 alter table rumo_expense_splits enable row level security;
 alter table rumo_price_watches enable row level security;
 alter table rumo_price_observations enable row level security;
-alter table rumo_logistics_entries enable row level security;
-alter table rumo_itinerary_ideas enable row level security;
+alter table rumo_planning_options enable row level security;
+alter table rumo_checklist_items enable row level security;
 
 -- Helper: viagens em que o usuário é membro
 create or replace function rumo_is_trip_member(t uuid) returns boolean
@@ -255,8 +259,8 @@ create policy "membros: observations" on rumo_price_observations for all to auth
 ) with check (
   exists(select 1 from rumo_price_watches w where w.id = watch_id and rumo_is_trip_member(w.trip_id))
 );
-create policy "membros: logistics" on rumo_logistics_entries for all to authenticated using (rumo_is_trip_member(trip_id)) with check (rumo_is_trip_member(trip_id));
-create policy "membros: ideas" on rumo_itinerary_ideas for all to authenticated using (rumo_is_trip_member(trip_id)) with check (rumo_is_trip_member(trip_id));
+create policy "membros: planning options" on rumo_planning_options for all to authenticated using (rumo_is_trip_member(trip_id)) with check (rumo_is_trip_member(trip_id));
+create policy "membros: checklist" on rumo_checklist_items for all to authenticated using (rumo_is_trip_member(trip_id)) with check (rumo_is_trip_member(trip_id));
 
 -- ---------- Storage: capa da viagem ----------
 -- Bucket público "rumo-trip-covers" (não é `create table`, aplicado à parte via

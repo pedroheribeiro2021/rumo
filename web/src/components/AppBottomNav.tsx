@@ -6,7 +6,7 @@ const TRIP_NAV_ITEMS = [
   { value: 'gastos', label: 'Gastos', icon: '💸', path: '/gastos' },
   { value: 'orcamento', label: 'Orçamento', icon: '📊', path: '/orcamento' },
   { value: 'roteiro', label: 'Roteiro', icon: '🗺️', path: '/roteiro' },
-  { value: 'logistica', label: 'Logística', icon: '🛏️', path: '/logistica' },
+  { value: 'planejamento', label: 'Planejamento', icon: '🗒️', path: '/planejamento' },
 ]
 
 /** Ponte entre o BottomNav (controlado via value/onChange) e as rotas de uma viagem. */
