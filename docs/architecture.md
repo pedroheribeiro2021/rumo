@@ -6,7 +6,7 @@
 - **Deploy**: Vercel (frontend). Variáveis via `.env` (ver `.env.example`).
 
 ## Multi-moeda
-Cada gasto guarda `amount` + `currency` + `fx_to_base` (taxa no momento do lançamento). Total da viagem = soma de `amount * fx_to_base`. Nunca recalcular taxas antigas. Buscar câmbio via API pública (exchangerate.host) e cachear por dia.
+Cada gasto guarda `amount` + `currency` + `fx_to_base` (taxa no momento do lançamento). Total da viagem = soma de `amount * fx_to_base`. Nunca recalcular taxas antigas. Buscar câmbio via API pública gratuita sem chave (open.er-api.com) e cachear por dia.
 
 ## Acerto de contas ("quem deve a quem")
 1. Para cada membro: pago (soma de expenses.paid_by) − devido (soma de expense_splits.share).

@@ -1,6 +1,17 @@
 # Pendências — Rumo
 
 ## Em aberto
+- **Atualizar `VITE_FX_API_URL` na Vercel (produção)** para
+  `https://open.er-api.com` — a `exchangerate.host` antiga passou a exigir
+  chave paga e a Calculadora de Câmbio ficava sempre "indisponível" (fix de
+  código já feito, ver ADR 0010, mas a env var em produção fica com o valor
+  antigo até ser trocada manualmente no painel da Vercel + redeploy).
+- **Validar em navegador com login real** o fix de câmbio, as categorias de
+  Planejamento (criar/excluir) e o novo dashboard da aba Viagem — a
+  verificação desta sessão ficou só em lint/testes/build/leitura de código;
+  tentei validar ao vivo mas parei no meio ao perceber que criar uma conta
+  de teste no Chrome do Pedro exigia permissão que eu não tinha pedido (ver
+  ADR 0010).
 - **Dia do roteiro só tem um `title`/`notes`, não períodos (Manhã/Almoço/Tarde/Noite).**
   Promover mais de uma opção de Planejamento pro mesmo dia sobrescreve o
   conteúdo anterior. Identificado ao revisar a planilha de viagem do Pedro

@@ -5,8 +5,8 @@ import type { PlanningOption, PlanningOptionUpdate } from '../lib/types'
 // Segmentos onde só faz sentido ter uma opção "vencedora" por cidade (não dá
 // pra reservar 2 hotéis ou 2 passagens pro mesmo trecho) — promover uma
 // descarta as outras candidatas da mesma cidade+segmento automaticamente.
-// Restaurante/atividade/praia/outro não são exclusivos: escolher um não impede
-// os outros de também virarem parte da viagem.
+// Demais categorias (padrão ou criadas pelo usuário) não são exclusivas:
+// escolher uma não impede as outras de também virarem parte da viagem.
 const EXCLUSIVE_SEGMENTS = ['hospedagem', 'transporte']
 
 export function usePlanningOptions(tripId: string | undefined) {
