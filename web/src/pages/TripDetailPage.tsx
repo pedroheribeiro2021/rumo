@@ -6,6 +6,7 @@ import { useExpenses } from '../hooks/useExpenses'
 import { useBudgetItems } from '../hooks/useBudget'
 import { useItineraryDays } from '../hooks/useItinerary'
 import { useChecklistItems } from '../hooks/useChecklist'
+import { computeSpentByCategory } from '../lib/budget'
 import { formatMoney as money } from '../lib/format'
 import { Avatar, Button, Card, CurrencySelect, Input, ListRow, LoadingState, Modal, ProgressBar, StatusChip } from '../components/ui'
 
@@ -51,6 +52,10 @@ export function TripDetailPage() {
   const totalPlanned = useMemo(
     () => (budgetItems ?? []).filter((b) => b.category).reduce((sum, b) => sum + b.planned_amount, 0),
     [budgetItems],
+  )
+  const topCategories = useMemo(
+    () => Object.entries(computeSpentByCategory(expenses ?? [])).sort((a, b) => b[1] - a[1]),
+    [expenses],
   )
 
   const nextDay = useMemo(() => {
@@ -211,6 +216,35 @@ export function TripDetailPage() {
             max={totalPlanned || 1}
             tone={totalPlanned > 0 && totalSpent > totalPlanned ? 'bad' : 'brand'}
           />
+
+          {topCategories.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+              {topCategories.slice(0, 5).map(([cat, spent]) => (
+                <span
+                  key={cat}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    gap: 4,
+                    padding: '4px 10px',
+                    borderRadius: 'var(--radius-full)',
+                    background: 'var(--color-surface-sunken)',
+                    fontSize: 'var(--text-body-sm)',
+                  }}
+                >
+                  <span style={{ color: 'var(--color-text-secondary)' }}>{cat}</span>
+                  <span style={{ color: 'var(--color-text-primary)', fontWeight: 'var(--weight-medium)', fontVariantNumeric: 'tabular-nums' }}>
+                    {money(spent, trip.base_currency)}
+                  </span>
+                </span>
+              ))}
+              {topCategories.length > 5 && (
+                <span style={{ padding: '4px 10px', fontSize: 'var(--text-body-sm)', color: 'var(--color-text-tertiary)' }}>
+                  +{topCategories.length - 5} outras
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         <ListRow

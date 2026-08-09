@@ -9,6 +9,7 @@ import {
   useDeleteExpense,
   useExpenses,
   useSyncPendingExpenses,
+  useUpdateExpense,
   type ExpenseWithSplits,
 } from '../hooks/useExpenses'
 import { useAuth } from '../contexts/AuthContext'
@@ -28,12 +29,14 @@ export function ExpensesPage() {
   const { data: categories } = useBudgetCategories(tripId)
   const { data: expenses, isLoading } = useExpenses(tripId)
   const createExpense = useCreateExpense(tripId!)
+  const updateExpense = useUpdateExpense(tripId!)
   const deleteExpense = useDeleteExpense(tripId!)
   const queryClient = useQueryClient()
   const isOnline = useOnlineStatus()
   useSyncPendingExpenses(tripId)
 
   const [open, setOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [showMore, setShowMore] = useState(false)
   const [amount, setAmount] = useState('')
   const [description, setDescription] = useState('')
@@ -92,6 +95,28 @@ export function ExpensesPage() {
     setSubmitError('')
     setOpen(false)
     setShowMore(false)
+    setEditingId(null)
+  }
+
+  function openEdit(expense: ExpenseWithSplits) {
+    setEditingId(expense.id)
+    setAmount(String(expense.amount))
+    setDescription(expense.description ?? '')
+    setCategory(expense.category ?? 'outros')
+    setCurrency(expense.currency)
+    setFxRate(expense.fx_to_base)
+    setSpentOn(expense.spent_on)
+    setPaidBy(expense.paid_by)
+    if (expense.splits.length === 0) {
+      setSplitMode('none')
+      setCustomShares({})
+    } else {
+      setSplitMode('custom')
+      setCustomShares(Object.fromEntries(expense.splits.map((s) => [s.member_id, String(s.share)])))
+    }
+    setSubmitError('')
+    setShowMore(true)
+    setOpen(true)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -122,17 +147,32 @@ export function ExpensesPage() {
       splits = entries
     }
 
-    await createExpense.mutateAsync({
-      tripId: tripId!,
-      description,
-      category,
-      amount: amountNum,
-      currency: effectiveCurrency,
-      fxToBase: fxRate,
-      paidBy: effectivePaidBy,
-      spentOn,
-      splits,
-    })
+    if (editingId) {
+      await updateExpense.mutateAsync({
+        id: editingId,
+        tripId: tripId!,
+        description,
+        category,
+        amount: amountNum,
+        currency: effectiveCurrency,
+        fxToBase: fxRate,
+        paidBy: effectivePaidBy,
+        spentOn,
+        splits,
+      })
+    } else {
+      await createExpense.mutateAsync({
+        tripId: tripId!,
+        description,
+        category,
+        amount: amountNum,
+        currency: effectiveCurrency,
+        fxToBase: fxRate,
+        paidBy: effectivePaidBy,
+        spentOn,
+        splits,
+      })
+    }
     resetForm()
   }
 
@@ -170,6 +210,7 @@ export function ExpensesPage() {
                 expense={expense}
                 baseCurrency={trip.base_currency}
                 payerName={members?.find((m) => m.id === expense.paid_by)?.display_name}
+                onEdit={expense.pending ? undefined : () => openEdit(expense)}
                 onDelete={() => handleDeleteExpense(expense)}
               />
             ))}
@@ -199,10 +240,10 @@ export function ExpensesPage() {
       <Modal
         open={open}
         onClose={resetForm}
-        title="Novo gasto"
+        title={editingId ? 'Editar gasto' : 'Novo gasto'}
         footer={
-          <Button type="submit" form="expense-form" fullWidth size="lg" loading={createExpense.isPending}>
-            Salvar gasto
+          <Button type="submit" form="expense-form" fullWidth size="lg" loading={editingId ? updateExpense.isPending : createExpense.isPending}>
+            {editingId ? 'Salvar alterações' : 'Salvar gasto'}
           </Button>
         }
       >
@@ -359,11 +400,13 @@ function ExpenseRow({
   expense,
   baseCurrency,
   payerName,
+  onEdit,
   onDelete,
 }: {
   expense: ExpenseWithSplits
   baseCurrency: string
   payerName?: string
+  onEdit?: () => void
   onDelete: () => void
 }) {
   const isForeign = expense.currency !== baseCurrency
@@ -399,20 +442,36 @@ function ExpenseRow({
             ≈ {money(expense.amount * expense.fx_to_base, baseCurrency)}
           </p>
         )}
-        <button
-          onClick={onDelete}
-          style={{
-            marginTop: 4,
-            border: 'none',
-            background: 'none',
-            color: 'var(--color-text-tertiary)',
-            fontSize: 'var(--text-body-sm)',
-            cursor: 'pointer',
-            fontFamily: 'var(--font-sans)',
-          }}
-        >
-          Excluir
-        </button>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
+          {onEdit && (
+            <button
+              onClick={onEdit}
+              style={{
+                border: 'none',
+                background: 'none',
+                color: 'var(--color-brand)',
+                fontSize: 'var(--text-body-sm)',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-sans)',
+              }}
+            >
+              Editar
+            </button>
+          )}
+          <button
+            onClick={onDelete}
+            style={{
+              border: 'none',
+              background: 'none',
+              color: 'var(--color-text-tertiary)',
+              fontSize: 'var(--text-body-sm)',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-sans)',
+            }}
+          >
+            Excluir
+          </button>
+        </div>
       </div>
     </Card>
   )
