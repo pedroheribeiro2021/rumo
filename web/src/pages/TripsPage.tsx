@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCreateTrip, useDeleteTrip, useTrips } from '../hooks/useTrips'
-import { Button, Card, CurrencySelect, EmptyState, Input, ListRow, LoadingState } from '../components/ui'
+import { Button, Card, CurrencySelect, EmptyState, InstallHint, Input, ListRow, LoadingState } from '../components/ui'
 
 export function TripsPage() {
   const { data: trips, isLoading } = useTrips()
@@ -39,6 +39,8 @@ export function TripsPage() {
 
   return (
     <div>
+      <InstallHint />
+
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <h1 style={{ margin: 0, fontSize: 'var(--text-h1)', color: 'var(--color-text-primary)' }}>Suas viagens</h1>
         <Button size="md" onClick={() => setShowForm((s) => !s)}>

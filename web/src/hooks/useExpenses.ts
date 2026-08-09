@@ -196,6 +196,45 @@ export function useSyncPendingExpenses(tripId: string | undefined) {
   }, [tripId, queryClient, session])
 }
 
+export function useUpdateExpense(tripId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (input: CreateExpenseInput & { id: string }) => {
+      const { error } = await supabase
+        .from('rumo_expenses')
+        .update({
+          description: input.description || null,
+          category: input.category,
+          amount: input.amount,
+          currency: input.currency,
+          fx_to_base: input.fxToBase,
+          paid_by: input.paidBy,
+          spent_on: input.spentOn,
+        })
+        .eq('id', input.id)
+      if (error) throw error
+
+      // recria as divisões do zero — mais simples e seguro que tentar diffar contra as existentes
+      const { error: deleteError } = await supabase.from('rumo_expense_splits').delete().eq('expense_id', input.id)
+      if (deleteError) throw deleteError
+
+      if (input.splits.length > 0) {
+        const splitRows = input.splits.map((s) => ({
+          expense_id: input.id,
+          member_id: s.memberId,
+          share: Math.round(s.shareCents) / 100,
+        }))
+        const { error: splitsError } = await supabase.from('rumo_expense_splits').insert(splitRows)
+        if (splitsError) throw splitsError
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses', tripId] })
+    },
+  })
+}
+
 export function useDeleteExpense(tripId: string) {
   const queryClient = useQueryClient()
 
