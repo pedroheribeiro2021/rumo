@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useTrip, useUpdateTrip, useUploadTripCover } from '../hooks/useTrips'
-import { useAddTripMember, useInviteTripMember, useRemoveTripMember, useTripMembers } from '../hooks/useTripMembers'
+import { useAddTripMember, useInviteTripMember, useRemoveTripMember, useTripMembers, useUpdateTripMember } from '../hooks/useTripMembers'
 import { useExpenses } from '../hooks/useExpenses'
 import { useBudgetItems } from '../hooks/useBudget'
 import { useItineraryDays } from '../hooks/useItinerary'
@@ -43,10 +43,13 @@ export function TripDetailPage() {
   const addMember = useAddTripMember(tripId!)
   const inviteMember = useInviteTripMember(tripId!)
   const removeMember = useRemoveTripMember(tripId!)
+  const updateMember = useUpdateTripMember(tripId!)
   const updateTrip = useUpdateTrip()
   const uploadCover = useUploadTripCover(tripId!)
   const [newMemberName, setNewMemberName] = useState('')
   const [newMemberEmail, setNewMemberEmail] = useState('')
+  const [editingMemberId, setEditingMemberId] = useState<string | null>(null)
+  const [editMemberName, setEditMemberName] = useState('')
 
   const totalSpent = useMemo(() => (expenses ?? []).reduce((sum, e) => sum + e.amount * e.fx_to_base, 0), [expenses])
   const totalPlanned = useMemo(
@@ -108,6 +111,19 @@ export function TripDetailPage() {
       base_currency: editCurrency,
     })
     setEditOpen(false)
+  }
+
+  function openEditMember(member: NonNullable<typeof members>[number]) {
+    setEditingMemberId(member.id)
+    setEditMemberName(member.display_name)
+  }
+
+  async function handleEditMemberSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!editMemberName.trim() || !editingMemberId) return
+    const member = members?.find((m) => m.id === editingMemberId)
+    await updateMember.mutateAsync({ id: editingMemberId, displayName: editMemberName.trim(), profileId: member?.profile_id ?? null })
+    setEditingMemberId(null)
   }
 
   async function handleCoverChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -190,6 +206,15 @@ export function TripDetailPage() {
           <CurrencySelect label="Moeda base" value={editCurrency} onChange={(e) => setEditCurrency(e.target.value)} />
           <Button type="submit" fullWidth loading={updateTrip.isPending}>
             Salvar alterações
+          </Button>
+        </form>
+      </Modal>
+
+      <Modal open={!!editingMemberId} onClose={() => setEditingMemberId(null)} title="Editar nome">
+        <form onSubmit={handleEditMemberSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <Input required autoFocus placeholder="Nome do viajante" value={editMemberName} onChange={(e) => setEditMemberName(e.target.value)} />
+          <Button type="submit" fullWidth loading={updateMember.isPending}>
+            Salvar
           </Button>
         </form>
       </Modal>
@@ -279,6 +304,19 @@ export function TripDetailPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   {m.role !== 'owner' && m.profile_id && <StatusChip tone="good">conta vinculada</StatusChip>}
                   {m.role !== 'owner' && !m.profile_id && m.email && <StatusChip tone="warn">convite pendente</StatusChip>}
+                  <button
+                    onClick={() => openEditMember(m)}
+                    style={{
+                      border: 'none',
+                      background: 'none',
+                      color: 'var(--color-brand)',
+                      fontSize: 'var(--text-body-sm)',
+                      cursor: 'pointer',
+                      fontFamily: 'var(--font-sans)',
+                    }}
+                  >
+                    Editar
+                  </button>
                   {m.role !== 'owner' && (
                     <button
                       onClick={() => removeMember.mutate(m.id)}
