@@ -49,7 +49,8 @@ export function useCreateTrip() {
         .single()
       if (error) throw error
 
-      const displayName = session!.user.email?.split('@')[0] ?? 'Eu'
+      const { data: profile } = await supabase.from('rumo_profiles').select('name').eq('id', userId).single()
+      const displayName = profile?.name || session!.user.email?.split('@')[0] || 'Eu'
       const { error: memberError } = await supabase.from('rumo_trip_members').insert({
         trip_id: trip.id,
         profile_id: userId,

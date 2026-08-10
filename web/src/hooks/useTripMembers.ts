@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../contexts/AuthContext'
 import type { TripMember, TripMemberInsert } from '../lib/types'
 
 export function useTripMembers(tripId: string | undefined) {
@@ -50,6 +51,26 @@ export function useInviteTripMember(tripId: string) {
       })
       if (error) throw error
       return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trip-members', tripId] })
+    },
+  })
+}
+
+export function useUpdateTripMember(tripId: string) {
+  const queryClient = useQueryClient()
+  const { session } = useAuth()
+
+  return useMutation({
+    mutationFn: async (input: { id: string; displayName: string; profileId: string | null }) => {
+      const { error } = await supabase.from('rumo_trip_members').update({ display_name: input.displayName }).eq('id', input.id)
+      if (error) throw error
+
+      // se for o próprio usuário se renomeando, guarda no perfil pra virar o padrão em novas viagens
+      if (input.profileId && input.profileId === session?.user.id) {
+        await supabase.from('rumo_profiles').update({ name: input.displayName }).eq('id', input.profileId)
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trip-members', tripId] })
