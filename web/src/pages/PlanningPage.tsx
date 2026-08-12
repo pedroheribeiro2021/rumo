@@ -5,6 +5,7 @@ import { useTripMembers } from '../hooks/useTripMembers'
 import { useAuth } from '../contexts/AuthContext'
 import { useItineraryDays } from '../hooks/useItinerary'
 import {
+  EXCLUSIVE_SEGMENTS,
   useCreatePlanningOption,
   useDeletePlanningOption,
   usePlanningOptions,
@@ -14,6 +15,7 @@ import {
 import { useCreatePlanningCategory, useDeletePlanningCategory, usePlanningCategories } from '../hooks/usePlanningCategories'
 import type { PlanningOption } from '../lib/types'
 import { groupByCity, normalizeUrl } from '../lib/planning'
+import { isStandalonePwa } from '../lib/platform'
 import { formatMoney as money } from '../lib/format'
 import { Button, Card, CurrencySelect, EmptyState, Fab, Input, LoadingState, Modal, StatusChip, Tabs } from '../components/ui'
 
@@ -133,6 +135,20 @@ export function PlanningPage() {
     setOpen(false)
   }
 
+  function handlePromote(option: PlanningOption) {
+    const siblings = (options ?? []).filter(
+      (o) => o.id !== option.id && o.segment === option.segment && o.city === option.city && o.status !== 'discarded',
+    )
+    if (EXCLUSIVE_SEGMENTS.includes(option.segment) && option.city && siblings.length > 0) {
+      const message =
+        siblings.length === 1
+          ? `Promover "${option.title}" vai descartar a outra opção de ${segmentLabel(option.segment).toLowerCase()} em ${option.city}. Continuar?`
+          : `Promover "${option.title}" vai descartar as outras ${siblings.length} opções de ${segmentLabel(option.segment).toLowerCase()} em ${option.city}. Continuar?`
+      if (!window.confirm(message)) return
+    }
+    promoteOption.mutate(option)
+  }
+
   if (!trip) return <LoadingState />
 
   return (
@@ -225,7 +241,11 @@ export function PlanningPage() {
                           <p style={{ margin: '4px 0 0', fontSize: 'var(--text-body-sm)', color: 'var(--color-text-secondary)' }}>{option.notes}</p>
                         )}
                         {option.link && (
-                          <a href={normalizeUrl(option.link)} target="_blank" rel="noreferrer" style={{ fontSize: 'var(--text-body-sm)', color: 'var(--color-brand)' }}>
+                          <a
+                            href={normalizeUrl(option.link)}
+                            {...(isStandalonePwa() ? {} : { target: '_blank', rel: 'noreferrer' })}
+                            style={{ fontSize: 'var(--text-body-sm)', color: 'var(--color-brand)' }}
+                          >
                             Link
                           </a>
                         )}
@@ -243,7 +263,7 @@ export function PlanningPage() {
                     </div>
                     <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
                       <button
-                        onClick={() => promoteOption.mutate(option)}
+                        onClick={() => handlePromote(option)}
                         disabled={option.status === 'chosen'}
                         style={{
                           border: 'none',
