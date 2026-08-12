@@ -13,7 +13,7 @@ import {
 } from '../hooks/usePlanningOptions'
 import { useCreatePlanningCategory, useDeletePlanningCategory, usePlanningCategories } from '../hooks/usePlanningCategories'
 import type { PlanningOption } from '../lib/types'
-import { groupByCity } from '../lib/planning'
+import { groupByCity, normalizeUrl } from '../lib/planning'
 import { formatMoney as money } from '../lib/format'
 import { Button, Card, CurrencySelect, EmptyState, Fab, Input, LoadingState, Modal, StatusChip, Tabs } from '../components/ui'
 
@@ -123,10 +123,10 @@ export function PlanningPage() {
       date_to: form.date_to || null,
       day_id: form.day_id || null,
       notes: form.notes.trim() || null,
-      link: form.link.trim() || null,
+      link: form.link.trim() ? normalizeUrl(form.link) : null,
     }
     if (editing) {
-      await updateOption.mutateAsync({ id: editing.id, ...payload, status: form.status })
+      await updateOption.mutateAsync({ id: editing.id, previousStatus: editing.status, ...payload, status: form.status })
     } else {
       await createOption.mutateAsync({ ...payload, created_by: myMemberId })
     }
@@ -225,7 +225,7 @@ export function PlanningPage() {
                           <p style={{ margin: '4px 0 0', fontSize: 'var(--text-body-sm)', color: 'var(--color-text-secondary)' }}>{option.notes}</p>
                         )}
                         {option.link && (
-                          <a href={option.link} target="_blank" rel="noreferrer" style={{ fontSize: 'var(--text-body-sm)', color: 'var(--color-brand)' }}>
+                          <a href={normalizeUrl(option.link)} target="_blank" rel="noreferrer" style={{ fontSize: 'var(--text-body-sm)', color: 'var(--color-brand)' }}>
                             Link
                           </a>
                         )}

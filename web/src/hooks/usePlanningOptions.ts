@@ -57,13 +57,48 @@ export function useCreatePlanningOption(tripId: string) {
   })
 }
 
+// Atualiza uma opção e reaplica a regra de exclusividade quando o status
+// muda pela edição manual (não só pelo botão "Promover"): virar 'chosen'
+// descarta as concorrentes da mesma cidade+segmento; deixar de ser 'chosen'
+// reativa (volta a 'candidate') as concorrentes que estavam descartadas —
+// senão elas ficam "presas" como descartadas mesmo sem ninguém mais promovida.
 export function useUpdatePlanningOption(tripId: string) {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ id, ...changes }: PlanningOptionUpdate & { id: string }) => {
+    mutationFn: async ({
+      id,
+      previousStatus,
+      ...changes
+    }: PlanningOptionUpdate & { id: string; previousStatus: string }) => {
       const { data, error } = await supabase.from('rumo_planning_options').update(changes).eq('id', id).select('*').single()
       if (error) throw error
+
+      const segment = changes.segment ?? data.segment
+      const city = changes.city ?? data.city
+      if (EXCLUSIVE_SEGMENTS.includes(segment) && city) {
+        if (changes.status === 'chosen' && previousStatus !== 'chosen') {
+          const { error: discardError } = await supabase
+            .from('rumo_planning_options')
+            .update({ status: 'discarded' })
+            .eq('trip_id', tripId)
+            .eq('segment', segment)
+            .eq('city', city)
+            .neq('id', id)
+          if (discardError) throw discardError
+        } else if (previousStatus === 'chosen' && changes.status && changes.status !== 'chosen') {
+          const { error: reactivateError } = await supabase
+            .from('rumo_planning_options')
+            .update({ status: 'candidate' })
+            .eq('trip_id', tripId)
+            .eq('segment', segment)
+            .eq('city', city)
+            .eq('status', 'discarded')
+            .neq('id', id)
+          if (reactivateError) throw reactivateError
+        }
+      }
+
       return data
     },
     onSuccess: () => {

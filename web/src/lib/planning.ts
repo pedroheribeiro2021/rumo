@@ -27,3 +27,11 @@ export function groupByCity<T extends OptionWithCity>(options: T[]): { city: str
   if (withoutCity.length > 0) groups.push({ city: 'Sem cidade definida', options: withoutCity })
   return groups
 }
+
+// Garante que o link tenha um esquema (https://) antes de virar href — sem
+// isso o navegador trata "booking.com/x" como caminho relativo à página
+// atual em vez de abrir o site externo.
+export function normalizeUrl(url: string): string {
+  const trimmed = url.trim()
+  return /^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(trimmed) ? trimmed : `https://${trimmed}`
+}
