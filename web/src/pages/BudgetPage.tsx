@@ -6,15 +6,9 @@ import { useBudgetItems, useCreateBudgetItem, useDeleteBudgetItem, useUpdateBudg
 import { useBudgetCategories, useCreateBudgetCategory } from '../hooks/useBudgetCategories'
 import { useItineraryDays } from '../hooks/useItinerary'
 import { computeSpentByCategory, computeSpentByDay } from '../lib/budget'
-import { formatMoney as money } from '../lib/format'
+import { formatDateShort, formatMoney as money } from '../lib/format'
 import type { BudgetItem } from '../lib/types'
 import { Button, Card, EmptyState, Input, LoadingState, ProgressBar, Tabs } from '../components/ui'
-
-function formatDay(dayDate: string | null) {
-  if (!dayDate) return '?'
-  const [, month, day] = dayDate.split('-')
-  return `${day}/${month}`
-}
 
 type Dimension = 'category' | 'day' | 'both'
 
@@ -197,7 +191,7 @@ export function BudgetPage() {
               return (
                 <div key={item.id} style={{ marginBottom: i < dayItems.length - 1 ? 16 : 0 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-body-sm)', marginBottom: 6 }}>
-                    <span style={{ color: 'var(--color-text-primary)' }}>Dia {formatDay(item.day_date)}</span>
+                    <span style={{ color: 'var(--color-text-primary)' }}>Dia {formatDateShort(item.day_date)}</span>
                     {editingItemId === item.id ? (
                       <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <input
@@ -315,7 +309,7 @@ export function BudgetPage() {
                 </option>
                 {days?.map((d) => (
                   <option key={d.id} value={d.day_date ?? ''}>
-                    {formatDay(d.day_date)} {d.base_city ? `· ${d.base_city}` : ''}
+                    {formatDateShort(d.day_date)} {d.base_city ? `· ${d.base_city}` : ''}
                   </option>
                 ))}
               </select>

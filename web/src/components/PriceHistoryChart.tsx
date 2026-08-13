@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { formatMoney } from '../lib/format'
+import { formatDateShort as formatDate, formatMoney } from '../lib/format'
 import type { PriceObservation } from '../lib/types'
 
 const WIDTH = 600
@@ -7,11 +7,6 @@ const HEIGHT = 220
 const PAD_X = 12
 const PAD_TOP = 16
 const PAD_BOTTOM = 28
-
-function formatDate(iso: string) {
-  const [, m, d] = iso.split('-')
-  return `${d}/${m}`
-}
 
 export function PriceHistoryChart({
   observations,

@@ -7,14 +7,8 @@ import { useBudgetItems } from '../hooks/useBudget'
 import { useItineraryDays } from '../hooks/useItinerary'
 import { useChecklistItems } from '../hooks/useChecklist'
 import { computeSpentByCategory } from '../lib/budget'
-import { formatMoney as money } from '../lib/format'
+import { formatDateShort, formatMoney as money } from '../lib/format'
 import { Avatar, Button, Card, CurrencySelect, Input, ListRow, LoadingState, Modal, ProgressBar, StatusChip } from '../components/ui'
-
-function formatDay(dayDate: string | null) {
-  if (!dayDate) return '?'
-  const [, month, day] = dayDate.split('-')
-  return `${day}/${month}`
-}
 
 // Compara datas ISO (YYYY-MM-DD) como string — ordena igual a comparação cronológica,
 // sem risco de fuso horário que `new Date(dateStr)` traria.
@@ -153,7 +147,7 @@ export function TripDetailPage() {
             <h1 style={{ margin: 0, fontSize: 'var(--text-h1)', color: trip.cover_image_url ? '#fff' : 'var(--color-text-primary)' }}>{trip.name}</h1>
             <p style={{ margin: '4px 0 0', color: trip.cover_image_url ? 'rgba(255,255,255,0.85)' : 'var(--color-text-secondary)', fontSize: 'var(--text-body-sm)' }}>
               {trip.destination ? `${trip.destination} · ` : ''}
-              {trip.start_date ?? '?'} a {trip.end_date ?? '?'} · moeda base {trip.base_currency}
+              {formatDateShort(trip.start_date)} a {formatDateShort(trip.end_date)} · moeda base {trip.base_currency}
             </p>
           </div>
           <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
@@ -274,7 +268,7 @@ export function TripDetailPage() {
 
         <ListRow
           title="Roteiro"
-          subtitle={nextDay ? `${formatDay(nextDay.day_date)}${nextDay.base_city ? ` · ${nextDay.base_city}` : ''}${nextDay.title ? ` — ${nextDay.title}` : ''}` : 'Nenhum dia planejado ainda'}
+          subtitle={nextDay ? `${formatDateShort(nextDay.day_date)}${nextDay.base_city ? ` · ${nextDay.base_city}` : ''}${nextDay.title ? ` — ${nextDay.title}` : ''}` : 'Nenhum dia planejado ainda'}
           onClick={() => navigate(`/trips/${trip.id}/roteiro`)}
           divider
         />
