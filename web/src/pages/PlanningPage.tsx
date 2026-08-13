@@ -16,17 +16,11 @@ import { useCreatePlanningCategory, useDeletePlanningCategory, usePlanningCatego
 import type { PlanningOption } from '../lib/types'
 import { groupByCity, normalizeUrl } from '../lib/planning'
 import { isStandalonePwa } from '../lib/platform'
-import { formatMoney as money } from '../lib/format'
+import { formatDateShort, formatMoney as money } from '../lib/format'
 import { Button, Card, CurrencySelect, EmptyState, Fab, Input, LoadingState, Modal, StatusChip, Tabs } from '../components/ui'
 
 function segmentLabel(value: string) {
   return value ? value.charAt(0).toUpperCase() + value.slice(1) : value
-}
-
-function formatDay(dayDate: string | null) {
-  if (!dayDate) return '?'
-  const [, month, day] = dayDate.split('-')
-  return `${day}/${month}`
 }
 
 const EMPTY_FORM = {
@@ -82,7 +76,7 @@ export function PlanningPage() {
 
   const dayLabel = useMemo(() => {
     const map = new Map<string, string>()
-    for (const d of days ?? []) map.set(d.id, `${formatDay(d.day_date)}${d.base_city ? ` · ${d.base_city}` : ''}`)
+    for (const d of days ?? []) map.set(d.id, `${formatDateShort(d.day_date)}${d.base_city ? ` · ${d.base_city}` : ''}`)
     return map
   }, [days])
 
@@ -240,8 +234,8 @@ export function PlanningPage() {
                         </p>
                         {(option.date_from || option.date_to) && (
                           <p style={{ margin: '2px 0 0', fontSize: 'var(--text-body-sm)', color: 'var(--color-text-secondary)' }}>
-                            {option.date_from ?? '?'}
-                            {option.date_to ? ` a ${option.date_to}` : ''}
+                            {formatDateShort(option.date_from)}
+                            {option.date_to ? ` a ${formatDateShort(option.date_to)}` : ''}
                           </p>
                         )}
                         {option.notes && (
@@ -396,7 +390,7 @@ export function PlanningPage() {
               <option value="">Sem dia definido</option>
               {days?.map((d) => (
                 <option key={d.id} value={d.id}>
-                  {formatDay(d.day_date)} {d.base_city ? `· ${d.base_city}` : ''}
+                  {formatDateShort(d.day_date)} {d.base_city ? `· ${d.base_city}` : ''}
                 </option>
               ))}
             </select>

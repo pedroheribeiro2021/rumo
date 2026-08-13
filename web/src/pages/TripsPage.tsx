@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCreateTrip, useDeleteTrip, useTrips } from '../hooks/useTrips'
+import { formatDateShort } from '../lib/format'
 import { Button, Card, CurrencySelect, EmptyState, InstallHint, Input, ListRow, LoadingState } from '../components/ui'
 
 export function TripsPage() {
@@ -74,7 +75,7 @@ export function TripsPage() {
               <ListRow
                 key={trip.id}
                 title={trip.name}
-                subtitle={`${trip.destination ? `${trip.destination} · ` : ''}${trip.start_date ?? '?'} a ${trip.end_date ?? '?'} · ${trip.base_currency}`}
+                subtitle={`${trip.destination ? `${trip.destination} · ` : ''}${formatDateShort(trip.start_date)} a ${formatDateShort(trip.end_date)} · ${trip.base_currency}`}
                 trailing={
                   <button
                     onClick={(e) => {

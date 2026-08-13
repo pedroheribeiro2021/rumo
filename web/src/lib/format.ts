@@ -5,3 +5,10 @@ export function formatMoney(value: number, currency: string) {
     return `${currency} ${value.toFixed(2)}`
   }
 }
+
+// Formata data ISO (YYYY-MM-DD) como dia/mês, sem ano — a viagem sempre é no ano corrente do planejamento.
+export function formatDateShort(dateStr: string | null | undefined): string {
+  if (!dateStr) return '?'
+  const [, month, day] = dateStr.split('-')
+  return `${day}/${month}`
+}

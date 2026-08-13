@@ -17,7 +17,7 @@ import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { useBudgetCategories } from '../hooks/useBudgetCategories'
 import { computeBalances, computeSettlement } from '../lib/settlement'
 import { fetchFxRate } from '../lib/fx'
-import { formatMoney as money } from '../lib/format'
+import { formatDateShort, formatMoney as money } from '../lib/format'
 import { dequeueExpense } from '../lib/offlineQueue'
 import { Button, Card, CurrencySelect, EmptyState, Fab, Input, LoadingState, Modal, OfflineBanner, StatusChip } from '../components/ui'
 
@@ -430,7 +430,7 @@ function ExpenseRow({
           )}
         </p>
         <p style={{ margin: '2px 0 0', fontSize: 'var(--text-body-sm)', color: 'var(--color-text-secondary)' }}>
-          {expense.spent_on} · pago por {payerName ?? '—'}
+          {formatDateShort(expense.spent_on)} · pago por {payerName ?? '—'}
         </p>
       </div>
       <div style={{ textAlign: 'right', flexShrink: 0 }}>

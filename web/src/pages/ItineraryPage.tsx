@@ -4,12 +4,7 @@ import { useTrip } from '../hooks/useTrips'
 import { useCreateItineraryDay, useDeleteItineraryDay, useItineraryDays, useUpdateItineraryDay } from '../hooks/useItinerary'
 import type { ItineraryDay } from '../lib/types'
 import { Button, Card, EmptyState, Input, LoadingState, Modal } from '../components/ui'
-
-function formatDayLabel(dayDate: string | null) {
-  if (!dayDate) return '?'
-  const [, month, day] = dayDate.split('-')
-  return `${day}/${month}`
-}
+import { formatDateShort } from '../lib/format'
 
 export function ItineraryPage() {
   const { tripId } = useParams<{ tripId: string }>()
@@ -102,7 +97,7 @@ export function ItineraryPage() {
               }}
             >
               <div style={{ minWidth: 46, fontWeight: 700, color: 'var(--color-primary-600)', fontSize: 'var(--text-body-sm)' }}>
-                {formatDayLabel(d.day_date)}
+                {formatDateShort(d.day_date)}
               </div>
               <div style={{ flex: 1 }}>
                 <p style={{ margin: 0, fontWeight: 600, fontSize: 'var(--text-body)', color: 'var(--color-text-primary)' }}>

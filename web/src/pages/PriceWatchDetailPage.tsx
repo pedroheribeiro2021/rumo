@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { usePriceWatch } from '../hooks/usePriceWatches'
 import { useAddPriceObservation, useDeletePriceObservation, usePriceObservations } from '../hooks/usePriceObservations'
-import { formatMoney as money } from '../lib/format'
+import { formatDateShort, formatMoney as money } from '../lib/format'
 import { PriceHistoryChart } from '../components/PriceHistoryChart'
 import { Button, Card, EmptyState, Input, LoadingState } from '../components/ui'
 
@@ -44,8 +44,8 @@ export function PriceWatchDetailPage() {
         {watch.origin} → {watch.destination}
       </h1>
       <p style={{ margin: '0 0 16px', fontSize: 'var(--text-body-sm)', color: 'var(--color-text-secondary)' }}>
-        {watch.depart_date ?? '?'}
-        {watch.return_date ? ` a ${watch.return_date}` : ''}
+        {formatDateShort(watch.depart_date)}
+        {watch.return_date ? ` a ${formatDateShort(watch.return_date)}` : ''}
         {watch.target_price ? ` · alvo ${money(watch.target_price, watch.currency)}` : ' · sem alvo definido'}
       </p>
 
@@ -75,7 +75,7 @@ export function PriceWatchDetailPage() {
             <tbody>
               {[...observations].reverse().map((o) => (
                 <tr key={o.id} style={{ borderTop: '1px solid var(--color-border)' }}>
-                  <td style={{ padding: '6px 0', color: 'var(--color-text-primary)' }}>{o.observed_at}</td>
+                  <td style={{ padding: '6px 0', color: 'var(--color-text-primary)' }}>{formatDateShort(o.observed_at)}</td>
                   <td style={{ padding: '6px 0', fontVariantNumeric: 'tabular-nums', color: 'var(--color-text-primary)' }}>
                     {money(o.price, watch.currency)}
                   </td>
