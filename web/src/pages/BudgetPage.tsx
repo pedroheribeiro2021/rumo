@@ -1,12 +1,13 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useTrip } from '../hooks/useTrips'
 import { useExpenses } from '../hooks/useExpenses'
-import { useBudgetItems, useCreateBudgetItem, useDeleteBudgetItem } from '../hooks/useBudget'
+import { useBudgetItems, useCreateBudgetItem, useDeleteBudgetItem, useUpdateBudgetItem } from '../hooks/useBudget'
 import { useBudgetCategories, useCreateBudgetCategory } from '../hooks/useBudgetCategories'
 import { useItineraryDays } from '../hooks/useItinerary'
 import { computeSpentByCategory, computeSpentByDay } from '../lib/budget'
 import { formatMoney as money } from '../lib/format'
+import type { BudgetItem } from '../lib/types'
 import { Button, Card, EmptyState, Input, LoadingState, ProgressBar, Tabs } from '../components/ui'
 
 function formatDay(dayDate: string | null) {
@@ -25,6 +26,7 @@ export function BudgetPage() {
   const { data: categories } = useBudgetCategories(tripId)
   const { data: days } = useItineraryDays(tripId)
   const createItem = useCreateBudgetItem(tripId!)
+  const updateItem = useUpdateBudgetItem(tripId!)
   const deleteItem = useDeleteBudgetItem(tripId!)
   const createCategory = useCreateBudgetCategory(tripId!)
 
@@ -33,6 +35,9 @@ export function BudgetPage() {
   const [dayDate, setDayDate] = useState('')
   const [plannedAmount, setPlannedAmount] = useState('')
   const [newCategoryName, setNewCategoryName] = useState('')
+  const [editingItemId, setEditingItemId] = useState<string | null>(null)
+  const [editAmount, setEditAmount] = useState('')
+  const cancelEditRef = useRef(false)
 
   const effectiveCategory = category || categories?.[0]?.name || ''
 
@@ -68,6 +73,24 @@ export function BudgetPage() {
     await createCategory.mutateAsync(name)
     setCategory(name)
     setNewCategoryName('')
+  }
+
+  function startEditAmount(item: BudgetItem) {
+    setEditingItemId(item.id)
+    setEditAmount(String(item.planned_amount))
+  }
+
+  async function commitEditAmount(item: BudgetItem) {
+    if (cancelEditRef.current) {
+      cancelEditRef.current = false
+      setEditingItemId(null)
+      return
+    }
+    const amount = parseFloat(editAmount.replace(',', '.'))
+    if (amount > 0 && amount !== item.planned_amount) {
+      await updateItem.mutateAsync({ id: item.id, planned_amount: amount })
+    }
+    setEditingItemId(null)
   }
 
   if (!trip) return <LoadingState />
@@ -109,15 +132,54 @@ export function BudgetPage() {
                 <div key={item.id} style={{ marginBottom: i < categoryItems.length - 1 ? 16 : 0 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-body-sm)', marginBottom: 6 }}>
                     <span style={{ color: 'var(--color-text-primary)' }}>{item.category}</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontVariantNumeric: 'tabular-nums', color: 'var(--color-text-secondary)' }}>
-                      {money(spent, item.currency)} / {money(item.planned_amount, item.currency)}
-                      <button
-                        onClick={() => deleteItem.mutate(item.id)}
-                        style={{ border: 'none', background: 'none', color: 'var(--color-text-tertiary)', cursor: 'pointer', fontFamily: 'var(--font-sans)' }}
-                      >
-                        ×
-                      </button>
-                    </span>
+                    {editingItemId === item.id ? (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          autoFocus
+                          value={editAmount}
+                          onChange={(e) => setEditAmount(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') e.currentTarget.blur()
+                            if (e.key === 'Escape') {
+                              cancelEditRef.current = true
+                              e.currentTarget.blur()
+                            }
+                          }}
+                          onBlur={() => commitEditAmount(item)}
+                          style={{
+                            width: 90,
+                            height: 28,
+                            padding: '0 8px',
+                            borderRadius: 'var(--radius-sm)',
+                            border: '1.5px solid var(--color-brand)',
+                            background: 'var(--color-surface)',
+                            color: 'var(--color-text-primary)',
+                            fontFamily: 'var(--font-sans)',
+                            fontSize: 'var(--text-body-sm)',
+                          }}
+                        />
+                      </span>
+                    ) : (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontVariantNumeric: 'tabular-nums', color: 'var(--color-text-secondary)' }}>
+                        {money(spent, item.currency)} / {money(item.planned_amount, item.currency)}
+                        <button
+                          onClick={() => startEditAmount(item)}
+                          aria-label="Editar valor planejado"
+                          style={{ border: 'none', background: 'none', color: 'var(--color-text-tertiary)', cursor: 'pointer', fontFamily: 'var(--font-sans)' }}
+                        >
+                          ✎
+                        </button>
+                        <button
+                          onClick={() => deleteItem.mutate(item.id)}
+                          style={{ border: 'none', background: 'none', color: 'var(--color-text-tertiary)', cursor: 'pointer', fontFamily: 'var(--font-sans)' }}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    )}
                   </div>
                   <ProgressBar value={spent} max={item.planned_amount || 1} tone={tone} />
                 </div>
@@ -136,15 +198,54 @@ export function BudgetPage() {
                 <div key={item.id} style={{ marginBottom: i < dayItems.length - 1 ? 16 : 0 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-body-sm)', marginBottom: 6 }}>
                     <span style={{ color: 'var(--color-text-primary)' }}>Dia {formatDay(item.day_date)}</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontVariantNumeric: 'tabular-nums', color: 'var(--color-text-secondary)' }}>
-                      {money(spent, item.currency)} / {money(item.planned_amount, item.currency)}
-                      <button
-                        onClick={() => deleteItem.mutate(item.id)}
-                        style={{ border: 'none', background: 'none', color: 'var(--color-text-tertiary)', cursor: 'pointer', fontFamily: 'var(--font-sans)' }}
-                      >
-                        ×
-                      </button>
-                    </span>
+                    {editingItemId === item.id ? (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          autoFocus
+                          value={editAmount}
+                          onChange={(e) => setEditAmount(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') e.currentTarget.blur()
+                            if (e.key === 'Escape') {
+                              cancelEditRef.current = true
+                              e.currentTarget.blur()
+                            }
+                          }}
+                          onBlur={() => commitEditAmount(item)}
+                          style={{
+                            width: 90,
+                            height: 28,
+                            padding: '0 8px',
+                            borderRadius: 'var(--radius-sm)',
+                            border: '1.5px solid var(--color-brand)',
+                            background: 'var(--color-surface)',
+                            color: 'var(--color-text-primary)',
+                            fontFamily: 'var(--font-sans)',
+                            fontSize: 'var(--text-body-sm)',
+                          }}
+                        />
+                      </span>
+                    ) : (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontVariantNumeric: 'tabular-nums', color: 'var(--color-text-secondary)' }}>
+                        {money(spent, item.currency)} / {money(item.planned_amount, item.currency)}
+                        <button
+                          onClick={() => startEditAmount(item)}
+                          aria-label="Editar valor planejado"
+                          style={{ border: 'none', background: 'none', color: 'var(--color-text-tertiary)', cursor: 'pointer', fontFamily: 'var(--font-sans)' }}
+                        >
+                          ✎
+                        </button>
+                        <button
+                          onClick={() => deleteItem.mutate(item.id)}
+                          style={{ border: 'none', background: 'none', color: 'var(--color-text-tertiary)', cursor: 'pointer', fontFamily: 'var(--font-sans)' }}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    )}
                   </div>
                   <ProgressBar value={spent} max={item.planned_amount || 1} tone={tone} />
                 </div>

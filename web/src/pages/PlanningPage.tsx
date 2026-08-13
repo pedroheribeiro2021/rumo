@@ -73,6 +73,13 @@ export function PlanningPage() {
   )
   const groups = useMemo(() => groupByCity(filtered), [filtered])
 
+  const cityOptions = useMemo(() => {
+    const set = new Set<string>()
+    for (const d of days ?? []) if (d.base_city) set.add(d.base_city)
+    for (const o of options ?? []) if (o.city) set.add(o.city)
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
+  }, [days, options])
+
   const dayLabel = useMemo(() => {
     const map = new Map<string, string>()
     for (const d of days ?? []) map.set(d.id, `${formatDay(d.day_date)}${d.base_city ? ` · ${d.base_city}` : ''}`)
@@ -310,6 +317,11 @@ export function PlanningPage() {
         }
       >
         <form id="planning-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <datalist id="rumo-city-options">
+            {cityOptions.map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
           <Input required autoFocus placeholder="Nome (ex.: Hotel OZ, La Cevichería...)" value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} />
 
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -336,7 +348,13 @@ export function PlanningPage() {
           </div>
 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <Input placeholder="Cidade" value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} style={{ flex: '1 1 140px' }} />
+            <Input
+              placeholder="Cidade"
+              list="rumo-city-options"
+              value={form.city}
+              onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
+              style={{ flex: '1 1 140px' }}
+            />
             <Input placeholder="Endereço/local (opcional)" value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} style={{ flex: '1 1 140px' }} />
           </div>
 

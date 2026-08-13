@@ -38,6 +38,26 @@ export function useCreateBudgetItem(tripId: string) {
   })
 }
 
+export function useUpdateBudgetItem(tripId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (input: { id: string; planned_amount: number }) => {
+      const { data, error } = await supabase
+        .from('rumo_budget_items')
+        .update({ planned_amount: input.planned_amount })
+        .eq('id', input.id)
+        .select('*')
+        .single()
+      if (error) throw error
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['budget-items', tripId] })
+    },
+  })
+}
+
 export function useDeleteBudgetItem(tripId: string) {
   const queryClient = useQueryClient()
 

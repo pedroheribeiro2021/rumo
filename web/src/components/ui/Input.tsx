@@ -18,6 +18,7 @@ export interface InputProps {
   step?: string | number
   min?: string | number
   minLength?: number
+  list?: string
   style?: CSSProperties
 }
 
@@ -39,6 +40,7 @@ export function Input({
   step,
   min,
   minLength,
+  list,
   style,
 }: InputProps) {
   const [focused, setFocused] = useState(false)
@@ -81,6 +83,7 @@ export function Input({
           step={step}
           min={min}
           minLength={minLength}
+          list={list}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           style={{
