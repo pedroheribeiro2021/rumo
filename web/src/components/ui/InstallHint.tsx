@@ -1,14 +1,11 @@
 import { useEffect, useState } from 'react'
+import { isStandalonePwa } from '../../lib/platform'
 
 const DISMISS_KEY = 'rumo-install-hint-dismissed'
 
 function isIosBrowserNotInstalled() {
-  const ua = window.navigator.userAgent
-  const isIos = /iphone|ipad|ipod/i.test(ua)
-  const isStandalone =
-    window.matchMedia('(display-mode: standalone)').matches ||
-    (window.navigator as Navigator & { standalone?: boolean }).standalone === true
-  return isIos && !isStandalone
+  const isIos = /iphone|ipad|ipod/i.test(window.navigator.userAgent)
+  return isIos && !isStandalonePwa()
 }
 
 /** iOS não tem prompt de instalação automático (beforeinstallprompt) — só funciona via Compartilhar → Adicionar à Tela de Início. */

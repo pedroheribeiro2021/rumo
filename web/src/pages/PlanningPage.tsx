@@ -5,6 +5,7 @@ import { useTripMembers } from '../hooks/useTripMembers'
 import { useAuth } from '../contexts/AuthContext'
 import { useItineraryDays } from '../hooks/useItinerary'
 import {
+  EXCLUSIVE_SEGMENTS,
   useCreatePlanningOption,
   useDeletePlanningOption,
   usePlanningOptions,
@@ -14,6 +15,7 @@ import {
 import { useCreatePlanningCategory, useDeletePlanningCategory, usePlanningCategories } from '../hooks/usePlanningCategories'
 import type { PlanningOption } from '../lib/types'
 import { groupByCity, normalizeUrl } from '../lib/planning'
+import { isStandalonePwa } from '../lib/platform'
 import { formatMoney as money } from '../lib/format'
 import { Button, Card, CurrencySelect, EmptyState, Fab, Input, LoadingState, Modal, StatusChip, Tabs } from '../components/ui'
 
@@ -70,6 +72,13 @@ export function PlanningPage() {
     [options, segmentFilter],
   )
   const groups = useMemo(() => groupByCity(filtered), [filtered])
+
+  const cityOptions = useMemo(() => {
+    const set = new Set<string>()
+    for (const d of days ?? []) if (d.base_city) set.add(d.base_city)
+    for (const o of options ?? []) if (o.city) set.add(o.city)
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
+  }, [days, options])
 
   const dayLabel = useMemo(() => {
     const map = new Map<string, string>()
@@ -131,6 +140,20 @@ export function PlanningPage() {
       await createOption.mutateAsync({ ...payload, created_by: myMemberId })
     }
     setOpen(false)
+  }
+
+  function handlePromote(option: PlanningOption) {
+    const siblings = (options ?? []).filter(
+      (o) => o.id !== option.id && o.segment === option.segment && o.city === option.city && o.status !== 'discarded',
+    )
+    if (EXCLUSIVE_SEGMENTS.includes(option.segment) && option.city && siblings.length > 0) {
+      const message =
+        siblings.length === 1
+          ? `Promover "${option.title}" vai descartar a outra opção de ${segmentLabel(option.segment).toLowerCase()} em ${option.city}. Continuar?`
+          : `Promover "${option.title}" vai descartar as outras ${siblings.length} opções de ${segmentLabel(option.segment).toLowerCase()} em ${option.city}. Continuar?`
+      if (!window.confirm(message)) return
+    }
+    promoteOption.mutate(option)
   }
 
   if (!trip) return <LoadingState />
@@ -225,7 +248,11 @@ export function PlanningPage() {
                           <p style={{ margin: '4px 0 0', fontSize: 'var(--text-body-sm)', color: 'var(--color-text-secondary)' }}>{option.notes}</p>
                         )}
                         {option.link && (
-                          <a href={normalizeUrl(option.link)} target="_blank" rel="noreferrer" style={{ fontSize: 'var(--text-body-sm)', color: 'var(--color-brand)' }}>
+                          <a
+                            href={normalizeUrl(option.link)}
+                            {...(isStandalonePwa() ? {} : { target: '_blank', rel: 'noreferrer' })}
+                            style={{ fontSize: 'var(--text-body-sm)', color: 'var(--color-brand)' }}
+                          >
                             Link
                           </a>
                         )}
@@ -243,7 +270,7 @@ export function PlanningPage() {
                     </div>
                     <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
                       <button
-                        onClick={() => promoteOption.mutate(option)}
+                        onClick={() => handlePromote(option)}
                         disabled={option.status === 'chosen'}
                         style={{
                           border: 'none',
@@ -290,6 +317,11 @@ export function PlanningPage() {
         }
       >
         <form id="planning-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <datalist id="rumo-city-options">
+            {cityOptions.map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
           <Input required autoFocus placeholder="Nome (ex.: Hotel OZ, La Cevichería...)" value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} />
 
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -316,7 +348,13 @@ export function PlanningPage() {
           </div>
 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <Input placeholder="Cidade" value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} style={{ flex: '1 1 140px' }} />
+            <Input
+              placeholder="Cidade"
+              list="rumo-city-options"
+              value={form.city}
+              onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
+              style={{ flex: '1 1 140px' }}
+            />
             <Input placeholder="Endereço/local (opcional)" value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} style={{ flex: '1 1 140px' }} />
           </div>
 

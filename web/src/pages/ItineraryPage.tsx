@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useTrip } from '../hooks/useTrips'
 import { useCreateItineraryDay, useDeleteItineraryDay, useItineraryDays, useUpdateItineraryDay } from '../hooks/useItinerary'
@@ -24,6 +24,12 @@ export function ItineraryPage() {
   const [country, setCountry] = useState('')
   const [title, setTitle] = useState('')
   const [notes, setNotes] = useState('')
+
+  const cityOptions = useMemo(() => {
+    const set = new Set<string>()
+    for (const d of days ?? []) if (d.base_city) set.add(d.base_city)
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
+  }, [days])
 
   const [editingDay, setEditingDay] = useState<ItineraryDay | null>(null)
   const [editDayDate, setEditDayDate] = useState('')
@@ -125,11 +131,17 @@ export function ItineraryPage() {
         </Card>
       )}
 
+      <datalist id="rumo-city-options">
+        {cityOptions.map((c) => (
+          <option key={c} value={c} />
+        ))}
+      </datalist>
+
       <Card style={{ marginTop: 16 }}>
         <form onSubmit={handleAdd} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <Input type="date" value={dayDate} onChange={(e) => setDayDate(e.target.value)} style={{ flex: '1 1 140px' }} />
-            <Input placeholder="Cidade" required value={baseCity} onChange={(e) => setBaseCity(e.target.value)} style={{ flex: '1 1 140px' }} />
+            <Input placeholder="Cidade" list="rumo-city-options" required value={baseCity} onChange={(e) => setBaseCity(e.target.value)} style={{ flex: '1 1 140px' }} />
             <Input placeholder="País (opcional)" value={country} onChange={(e) => setCountry(e.target.value)} style={{ flex: '1 1 140px' }} />
           </div>
           <Input placeholder="Título do dia (opcional)" value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -144,7 +156,7 @@ export function ItineraryPage() {
         <form onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <Input type="date" value={editDayDate} onChange={(e) => setEditDayDate(e.target.value)} style={{ flex: '1 1 140px' }} />
-            <Input placeholder="Cidade" required value={editBaseCity} onChange={(e) => setEditBaseCity(e.target.value)} style={{ flex: '1 1 140px' }} />
+            <Input placeholder="Cidade" list="rumo-city-options" required value={editBaseCity} onChange={(e) => setEditBaseCity(e.target.value)} style={{ flex: '1 1 140px' }} />
             <Input placeholder="País (opcional)" value={editCountry} onChange={(e) => setEditCountry(e.target.value)} style={{ flex: '1 1 140px' }} />
           </div>
           <Input placeholder="Título do dia (opcional)" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
