@@ -1,7 +1,7 @@
 # Pendências — Rumo
 
 ## Em aberto
-- **Validar consulta offline em aparelho real** (ADR 0011): depois do deploy,
+- **Validar consulta offline em aparelho real** (ADR 0011): já em produção (PR #8);
   abrir o app online uma vez para encher o cache, ativar o modo avião e
   reabrir. Só aparece offline o que já tinha sido aberto online.
 - **Atualizar `VITE_FX_API_URL` na Vercel (produção)** para
