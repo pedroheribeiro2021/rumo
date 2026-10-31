@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
+import { clearOfflineCache } from '../lib/queryClient'
 
 interface AuthContextValue {
   session: Session | null
@@ -19,7 +20,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // a troca por sessão acontece dentro da inicialização do client e só é refletida no
     // primeiro evento de onAuthStateChange. Resolver `loading` antes disso faz o RequireAuth
     // redirecionar para /login e descartar o `?code` antes da troca terminar.
-    const { data: subscription } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const { data: subscription } = supabase.auth.onAuthStateChange((event, newSession) => {
+      // o cache offline guarda dados da conta: não pode sobrar para quem logar depois
+      if (event === 'SIGNED_OUT') clearOfflineCache()
       setSession(newSession)
       setLoading(false)
     })

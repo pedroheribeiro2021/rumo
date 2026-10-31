@@ -1,6 +1,9 @@
 # Pendências — Rumo
 
 ## Em aberto
+- **Validar consulta offline em aparelho real** (ADR 0011): depois do deploy,
+  abrir o app online uma vez para encher o cache, ativar o modo avião e
+  reabrir. Só aparece offline o que já tinha sido aberto online.
 - **Atualizar `VITE_FX_API_URL` na Vercel (produção)** para
   `https://open.er-api.com` — a `exchangerate.host` antiga passou a exigir
   chave paga e a Calculadora de Câmbio ficava sempre "indisponível" (fix de
@@ -41,6 +44,8 @@
   `hospedagem`/`alimentação`/`transporte` na tela de Orçamento.
 
 ## Concluído
+- **Dados ficam disponíveis offline** (cache do React Query persistido no
+  aparelho por 30 dias, limpo no logout). Ver ADR 0011.
 - **Unificação de Ideias + Logística em "Planejamento"** (com preço e cidade
   nas opções, promover com exclusividade por cidade só pra hospedagem/
   transporte) **+ Checklist de bagagem** — a pedido do Pedro, usando a
