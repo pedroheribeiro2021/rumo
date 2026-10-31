@@ -22,7 +22,9 @@ problema era só o cache.
 - `npm run lint` (só o aviso antigo `only-export-components`), `npm run test`
   (29/29) e `npm run build` passaram. **Não testado em aparelho real offline.**
 
-**Próximos passos:** depois do deploy, abrir o app online uma vez (para
+**Merge:** PR #8 mergeado em `main` (b1769b0); CI e deploy da Vercel ok.
+
+**Próximos passos:** abrir o app online uma vez (para
 encher o cache) e testar em modo avião.
 
 ## 2026-07-29 (cont. 3) — Fix câmbio, categorias de Planejamento editáveis, dashboard da viagem
