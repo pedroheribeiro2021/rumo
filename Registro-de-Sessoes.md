@@ -1,5 +1,30 @@
 # Registro de Sessões — Rumo
 
+## 2026-10-31 — Dados disponíveis offline (cache persistido)
+
+**Objetivo:** o Pedro, em viagem, relatou que sem internet não conseguia
+acessar nada do que estava registrado no app.
+
+**Diagnóstico:** o cache do React Query era só em memória e o service worker
+guarda só o app shell. Ao reabrir o PWA offline, nenhuma tela tinha dados.
+A sessão de login sobrevive offline (verificado no `auth-js`), então o
+problema era só o cache.
+
+**Decisões:** ver `ADR/0011-cache-offline-persistido.md`.
+
+**Alterações (branch `fix/dados-offline`):**
+- `web/src/lib/queryClient.ts`: `gcTime` de 30 dias, `queryPersister`
+  (localStorage, chave `rumo:query-cache`) e `clearOfflineCache()`.
+- `web/src/App.tsx`: `QueryClientProvider` virou `PersistQueryClientProvider`.
+- `web/src/contexts/AuthContext.tsx`: limpa o cache no `SIGNED_OUT`.
+- `web/package.json`: novos `@tanstack/react-query-persist-client` e
+  `@tanstack/query-sync-storage-persister`, `react-query` em 5.105.
+- `npm run lint` (só o aviso antigo `only-export-components`), `npm run test`
+  (29/29) e `npm run build` passaram. **Não testado em aparelho real offline.**
+
+**Próximos passos:** depois do deploy, abrir o app online uma vez (para
+encher o cache) e testar em modo avião.
+
 ## 2026-07-29 (cont. 3) — Fix câmbio, categorias de Planejamento editáveis, dashboard da viagem
 
 **Objetivo:** o Pedro perguntou como funciona a simulação de câmbio (se
