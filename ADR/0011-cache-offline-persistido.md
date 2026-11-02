@@ -12,9 +12,9 @@ carregando para sempre. A única coisa offline era a fila de gastos novos
 (`offlineQueue.ts`), e até ela mostrava só os pendentes, porque o cache dos
 gastos já sincronizados tinha sumido junto com a memória.
 
-O login não era o problema: o `supabase-js` mantém a sessão no
-`localStorage`, e falha de rede ao renovar o token (`AuthRetryableFetchError`)
-não remove a sessão. Conferido no código do `auth-js` instalado.
+~~O login não era o problema~~ — **errado, ver "Correção" abaixo.** O
+`supabase-js` de fato não *apaga* a sessão em falha de rede, mas isso não
+basta: ele avisa o app que não há sessão.
 
 ## Decisão
 - `PersistQueryClientProvider` (`@tanstack/react-query-persist-client`) +
@@ -40,3 +40,27 @@ não remove a sessão. Conferido no código do `auth-js` instalado.
   aparelho (a tela precisa ter carregado a query antes).
 - Edições que não são lançamento de gasto (orçamento, roteiro etc.) continuam
   exigindo conexão. Só gasto novo entra na fila offline.
+
+## Correção (2026-11-02) — sessão offline
+Depois do deploy, o Pedro relatou que **nenhuma tela** funcionava offline.
+Causa: o access token do Supabase dura 1h. Ao abrir o app sem rede depois
+disso, o `supabase-js` tenta renovar o token com backoff por ~25s. Ao falhar,
+emite `INITIAL_SESSION` com sessão **nula**, mesmo mantendo a sessão salva no
+storage. O `RequireAuth` então mandava para `/login`, e o cache persistido
+nunca chegava a aparecer. Na análise original foi lido só o `_callRefreshToken`,
+não o `__loadSession`/`_emitInitialSession`. Confirmado agora com teste contra
+o cliente real (`offlineSession.test.ts`).
+
+**Decisão:**
+- `AuthContext` começa já com a sessão salva no storage (`parseStoredSession`),
+  sem esperar o `INITIAL_SESSION`, para não travar ~25s no "Carregando…".
+  Exceção: URL com `?code=` (troca PKCE).
+- Se o `INITIAL_SESSION` chega nulo mas a sessão continua no storage, segue com
+  ela. O `supabase-js` só apaga a sessão quando o servidor recusa o refresh
+  token, então sessão ainda salva quer dizer falha de rede. Quando a rede volta,
+  o auto-refresh emite `TOKEN_REFRESHED`.
+- `storageKey` passou a ser explícito em `supabase.ts` (`AUTH_STORAGE_KEY`), com
+  o mesmo valor padrão, para não deslogar ninguém.
+
+**Limitação:** "Sair" sem internet pode não funcionar, porque o `signOut`
+precisa falar com o servidor.

@@ -1,5 +1,32 @@
 # Registro de Sessões — Rumo
 
+## 2026-11-02 — Correção: app mandava para o login quando offline
+
+**Pedido:** o Pedro testou em viagem depois do PR #8: "não funcionou como você
+disse que seria em nenhuma tela".
+
+**Diagnóstico:** a sessão do Supabase não sobrevivia offline do jeito que
+eu tinha afirmado na sessão anterior (erro meu de análise). Com o token
+vencido (>1h), o `supabase-js` tenta renovar por ~25s e emite
+`INITIAL_SESSION` nulo, e o `RequireAuth` redirecionava para o login. O
+cache persistido do PR #8 estava lá, mas nenhuma tela chegava a abrir.
+Confirmado com teste contra o cliente real. O service worker serve o app
+offline normalmente (`NavigationRoute` para `index.html` no `sw.js`).
+
+**Decisões:** seção "Correção" em `ADR/0011-cache-offline-persistido.md`.
+
+**Alterações (branch `fix/sessao-offline`):**
+- `web/src/lib/offlineSession.ts` + teste: `parseStoredSession` e teste de
+  premissa contra o `supabase-js` real (~26s, por causa do backoff).
+- `web/src/lib/supabase.ts`: `AUTH_STORAGE_KEY` explícito (mesmo valor padrão).
+- `web/src/contexts/AuthContext.tsx`: começa com a sessão salva e usa ela
+  quando o `INITIAL_SESSION` chega nulo por falta de rede.
+- lint (só o aviso antigo), 32/32 testes e build passaram. **Não testado em
+  aparelho real** (precisaria de login real).
+
+**Próximos passos:** merge e deploy. No celular, abrir online uma vez,
+passar pelas telas e testar em modo avião.
+
 ## 2026-10-31 — Dados disponíveis offline (cache persistido)
 
 **Objetivo:** o Pedro, em viagem, relatou que sem internet não conseguia

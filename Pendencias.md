@@ -1,7 +1,9 @@
 # Pendências — Rumo
 
 ## Em aberto
-- **Validar consulta offline em aparelho real** (ADR 0011): depois do deploy,
+- **"Sair" sem internet pode não funcionar** (o `signOut` precisa do servidor) — ver ADR 0011.
+- **Validar consulta offline em aparelho real** (ADR 0011, incl. correção da
+  sessão offline de 2026-11-02 — o 1º teste do Pedro falhou em todas as telas): depois do deploy,
   abrir o app online uma vez para encher o cache, ativar o modo avião e
   reabrir. Só aparece offline o que já tinha sido aberto online.
 - **Atualizar `VITE_FX_API_URL` na Vercel (produção)** para
