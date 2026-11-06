@@ -9,6 +9,8 @@ export interface PendingExpense {
   currency: string
   fxToBase: number
   paidBy: string
+  // opcional: itens enfileirados antes deste campo existir não o têm
+  paymentMethod?: string | null
   spentOn: string
   createdBy: string | undefined
   splits: { memberId: string; shareCents: number }[]

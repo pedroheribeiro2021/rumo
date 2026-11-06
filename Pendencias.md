@@ -1,6 +1,15 @@
 # Pendências — Rumo
 
 ## Em aberto
+- **Pagamentos entre membros no acerto de contas.** Hoje não dá pra registrar
+  dinheiro que passou de um viajante pro outro (Pix de adiantamento, devolução).
+  Na viagem de Foz, um Pix de R$ 350 da Bruna pro Pedro, usado pra pagar gastos
+  divididos, teve que ser modelado trocando o "pago por" dos gastos pra Bruna.
+  Precisa de tabela própria (`rumo_settlements`?) que entre no `computeBalances`
+  sem inflar o total de gastos.
+- **`new Date().toISOString().slice(0, 10)` ainda em `TripDetailPage` e
+  `PriceWatchDetailPage`.** É UTC: depois das 21h em Brasília vira o dia
+  seguinte. Na tela de gastos já foi trocado por `todayLocalISO()`.
 - **"Sair" sem internet pode não funcionar** (o `signOut` precisa do servidor) — ver ADR 0011.
 - **Validar consulta offline em aparelho real** (ADR 0011, incl. correção da
   sessão offline de 2026-11-02 — o 1º teste do Pedro falhou em todas as telas): depois do deploy,

@@ -1,5 +1,39 @@
 # Registro de Sessões — Rumo
 
+## 2026-11-06 — Filtros e agrupamento por dia na tela de Gastos
+
+**Objetivo:** depois de uma auditoria dos gastos da viagem de Foz contra os
+extratos, o Pedro pediu filtro na tela de gastos (não tinha nem filtro por data).
+
+**Decisões:**
+- Lista agrupada por dia, com subtotal no cabeçalho de cada dia.
+- Chips de dia sempre à vista (Todos / Antes / um por dia da viagem até hoje /
+  Depois). Dias da viagem sem gasto também aparecem: ver o dia vazio também é conferência.
+- Busca (sem acento) e "Filtros" recolhível com categoria, quem pagou e "sem divisão".
+- Filtros ficam na URL (`?dia=&categoria=&pagou=&semdivisao=1&q=`).
+- O **acerto de contas não é filtrado**: um saldo recortado por filtro seria falso.
+- Lógica em `web/src/lib/expenseFilters.ts` (função pura + testes, ADR 0008).
+- Data padrão de um gasto novo passou a usar o dia local (`todayLocalISO`),
+  pois `toISOString()` jogava gasto lançado depois das 21h pro dia seguinte.
+
+**Alterações (branch `feat/filtros-gastos`):** `lib/expenseFilters.ts` (+testes),
+`components/ExpenseFilterBar.tsx` (+testes), `lib/format.ts` (`todayLocalISO`,
+`formatDayWithWeekday`), `pages/ExpensesPage.tsx`.
+
+Segundo commit: **forma de pagamento** (cartão / Pix / espécie) no gasto.
+Seletor visível no formulário (fora de "mais opções"), vem com a última forma
+usada (`localStorage`), então não custa toque extra. Aparece na linha do gasto
+e como filtro "Pagamento" (inclui "Não informado" para gastos antigos).
+Coluna `payment_method` nula = não informado — sem chute retroativo.
+Arquivos: `lib/paymentMethods.ts`, `supabase/schema.sql`, `database.types.ts`,
+`offlineQueue.ts` (campo opcional, itens antigos da fila seguem válidos),
+`hooks/useExpenses.ts`.
+
+**Verificação:** lint, 51 testes e build ok. Não validado no navegador com login real.
+**Migração aplicada** no Supabase em 2026-11-06 (`rumo_expenses_payment_method`),
+a pedido do Pedro, antes do merge. Gastos da viagem de Foz conferidos contra os
+extratos foram preenchidos (22 cartão, 4 Pix, 1 espécie); o resto segue nulo.
+
 ## 2026-11-02 — Correção: app mandava para o login quando offline
 
 **Pedido:** o Pedro testou em viagem depois do PR #8: "não funcionou como você
@@ -49,7 +83,9 @@ problema era só o cache.
 - `npm run lint` (só o aviso antigo `only-export-components`), `npm run test`
   (29/29) e `npm run build` passaram. **Não testado em aparelho real offline.**
 
-**Próximos passos:** depois do deploy, abrir o app online uma vez (para
+**Merge:** PR #8 mergeado em `main` (b1769b0); CI e deploy da Vercel ok.
+
+**Próximos passos:** abrir o app online uma vez (para
 encher o cache) e testar em modo avião.
 
 ## 2026-07-29 (cont. 3) — Fix câmbio, categorias de Planejamento editáveis, dashboard da viagem

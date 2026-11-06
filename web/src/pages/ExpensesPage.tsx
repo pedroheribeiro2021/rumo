@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useTrip } from '../hooks/useTrips'
 import { useTripMembers } from '../hooks/useTripMembers'
 import {
@@ -17,7 +17,10 @@ import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { useBudgetCategories } from '../hooks/useBudgetCategories'
 import { computeBalances, computeSettlement } from '../lib/settlement'
 import { fetchFxRate } from '../lib/fx'
-import { formatDateShort, formatMoney as money } from '../lib/format'
+import { formatDayWithWeekday, formatMoney as money, todayLocalISO } from '../lib/format'
+import { buildDayOptions, filterExpenses, filtersFromParams, filtersToParams, groupExpensesByDay, hasActiveFilters, type ExpenseFilters } from '../lib/expenseFilters'
+import { ExpenseFilterBar } from '../components/ExpenseFilterBar'
+import { PAYMENT_METHODS, getLastPaymentMethod, paymentMethodLabel, setLastPaymentMethod, type PaymentMethod } from '../lib/paymentMethods'
 import { dequeueExpense } from '../lib/offlineQueue'
 import { Button, Card, CurrencySelect, EmptyState, Fab, Input, LoadingState, Modal, OfflineBanner, StatusChip } from '../components/ui'
 
@@ -44,8 +47,10 @@ export function ExpensesPage() {
   const [currency, setCurrency] = useState<string | null>(null)
   const [fxRate, setFxRate] = useState(1)
   const [fxLoading, setFxLoading] = useState(false)
-  const [spentOn, setSpentOn] = useState(() => new Date().toISOString().slice(0, 10))
+  const [spentOn, setSpentOn] = useState(() => todayLocalISO())
   const [paidBy, setPaidBy] = useState<string | null>(null)
+  // null só ao editar gasto antigo sem forma informada — não inventa um valor pra ele
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(() => getLastPaymentMethod())
   const [splitMode, setSplitMode] = useState<'none' | 'equal' | 'custom'>('none')
   const [customShares, setCustomShares] = useState<Record<string, string>>({})
   const [submitError, setSubmitError] = useState('')
@@ -60,6 +65,19 @@ export function ExpensesPage() {
 
   const transfers = useMemo(() => computeSettlement(balances), [balances])
   const pendingCount = useMemo(() => (expenses ?? []).filter((e) => e.pending).length, [expenses])
+
+  // Filtros só recortam a lista e o total exibido — o acerto de contas continua
+  // sobre todos os gastos, senão um filtro ativo mostraria um saldo falso.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const filters = useMemo(() => filtersFromParams(searchParams), [searchParams])
+  const setFilters = (next: ExpenseFilters) => setSearchParams(filtersToParams(next), { replace: true })
+  const tripRange = useMemo(() => ({ start_date: trip?.start_date ?? null, end_date: trip?.end_date ?? null }), [trip?.start_date, trip?.end_date])
+  const filtered = useMemo(() => filterExpenses(expenses ?? [], filters, tripRange), [expenses, filters, tripRange])
+  const dayGroups = useMemo(() => groupExpensesByDay(filtered), [filtered])
+  const filteredTotal = useMemo(() => filtered.reduce((sum, e) => sum + e.amount * e.fx_to_base, 0), [filtered])
+  const dayOptions = useMemo(() => buildDayOptions(expenses ?? [], tripRange, todayLocalISO()), [expenses, tripRange])
+  const usedCategories = useMemo(() => [...new Set((expenses ?? []).map((e) => e.category ?? 'outros'))].sort(), [expenses])
+  const filtering = hasActiveFilters(filters)
 
   function handleDeleteExpense(expense: ExpenseWithSplits) {
     if (expense.pending) {
@@ -88,8 +106,9 @@ export function ExpensesPage() {
     setCategory('outros')
     setCurrency(null)
     setFxRate(1)
-    setSpentOn(new Date().toISOString().slice(0, 10))
+    setSpentOn(todayLocalISO())
     setPaidBy(null)
+    setPaymentMethod(getLastPaymentMethod())
     setSplitMode('none')
     setCustomShares({})
     setSubmitError('')
@@ -107,6 +126,7 @@ export function ExpensesPage() {
     setFxRate(expense.fx_to_base)
     setSpentOn(expense.spent_on)
     setPaidBy(expense.paid_by)
+    setPaymentMethod((expense.payment_method as PaymentMethod | null) ?? null)
     if (expense.splits.length === 0) {
       setSplitMode('none')
       setCustomShares({})
@@ -157,6 +177,7 @@ export function ExpensesPage() {
         currency: effectiveCurrency,
         fxToBase: fxRate,
         paidBy: effectivePaidBy,
+        paymentMethod,
         spentOn,
         splits,
       })
@@ -169,10 +190,12 @@ export function ExpensesPage() {
         currency: effectiveCurrency,
         fxToBase: fxRate,
         paidBy: effectivePaidBy,
+        paymentMethod,
         spentOn,
         splits,
       })
     }
+    if (paymentMethod) setLastPaymentMethod(paymentMethod)
     resetForm()
   }
 
@@ -188,7 +211,14 @@ export function ExpensesPage() {
         <div>
           <h1 style={{ margin: 0, fontSize: 'var(--text-h1)', color: 'var(--color-text-primary)' }}>Gastos</h1>
           <p style={{ margin: '4px 0 0', fontSize: 'var(--text-body)', color: 'var(--color-text-secondary)' }}>
-            Total: <strong style={{ color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>{money(total, trip.base_currency)}</strong>
+            {filtering ? 'No filtro' : 'Total'}:{' '}
+            <strong style={{ color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>{money(filtering ? filteredTotal : total, trip.base_currency)}</strong>
+            {filtering && (
+              <span style={{ color: 'var(--color-text-tertiary)' }}>
+                {' '}
+                · {filtered.length} de {expenses?.length ?? 0} · total {money(total, trip.base_currency)}
+              </span>
+            )}
           </p>
         </div>
       </div>
@@ -203,18 +233,38 @@ export function ExpensesPage() {
         {isLoading && <LoadingState />}
         {!isLoading && expenses?.length === 0 && <EmptyState icon="💸" title="Nenhum gasto ainda" message="Toque no + para lançar o primeiro." />}
         {!isLoading && expenses && expenses.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {expenses.map((expense) => (
-              <ExpenseRow
-                key={expense.id}
-                expense={expense}
-                baseCurrency={trip.base_currency}
-                payerName={members?.find((m) => m.id === expense.paid_by)?.display_name}
-                onEdit={expense.pending ? undefined : () => openEdit(expense)}
-                onDelete={() => handleDeleteExpense(expense)}
-              />
+          <>
+            <ExpenseFilterBar filters={filters} onChange={setFilters} dayOptions={dayOptions} categories={usedCategories} members={members ?? []} />
+            {dayGroups.length === 0 && (
+              <div style={{ marginTop: 16 }}>
+                <EmptyState icon="🔎" title="Nada por aqui" message="Nenhum gasto bate com esse filtro." />
+              </div>
+            )}
+            {dayGroups.map((group) => (
+              <section key={group.date} style={{ marginTop: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', margin: '0 2px 6px' }}>
+                  <h2 style={{ margin: 0, fontSize: 'var(--text-body-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--color-text-secondary)', textTransform: 'capitalize' }}>
+                    {formatDayWithWeekday(group.date)}
+                  </h2>
+                  <span style={{ fontSize: 'var(--text-body-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--color-text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
+                    {money(group.total, trip.base_currency)}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {group.expenses.map((expense) => (
+                    <ExpenseRow
+                      key={expense.id}
+                      expense={expense}
+                      baseCurrency={trip.base_currency}
+                      payerName={members?.find((m) => m.id === expense.paid_by)?.display_name}
+                      onEdit={expense.pending ? undefined : () => openEdit(expense)}
+                      onDelete={() => handleDeleteExpense(expense)}
+                    />
+                  ))}
+                </div>
+              </section>
             ))}
-          </div>
+          </>
         )}
       </div>
 
@@ -286,6 +336,32 @@ export function ExpensesPage() {
                 }}
               >
                 {c.name}
+              </button>
+            ))}
+          </div>
+
+          <div role="radiogroup" aria-label="Forma de pagamento" style={{ display: 'flex', gap: 6 }}>
+            {PAYMENT_METHODS.map((p) => (
+              <button
+                key={p.value}
+                type="button"
+                role="radio"
+                aria-checked={paymentMethod === p.value}
+                onClick={() => setPaymentMethod(p.value)}
+                style={{
+                  flex: 1,
+                  borderRadius: 'var(--radius-full)',
+                  border: 'none',
+                  padding: '8px 12px',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  fontFamily: 'var(--font-sans)',
+                  cursor: 'pointer',
+                  background: paymentMethod === p.value ? 'var(--color-brand)' : 'var(--color-surface-sunken)',
+                  color: paymentMethod === p.value ? '#fff' : 'var(--color-text-secondary)',
+                }}
+              >
+                {p.label}
               </button>
             ))}
           </div>
@@ -430,7 +506,8 @@ function ExpenseRow({
           )}
         </p>
         <p style={{ margin: '2px 0 0', fontSize: 'var(--text-body-sm)', color: 'var(--color-text-secondary)' }}>
-          {formatDateShort(expense.spent_on)} · pago por {payerName ?? '—'}
+          pago por {payerName ?? '—'}
+          {paymentMethodLabel(expense.payment_method) && ` · ${paymentMethodLabel(expense.payment_method)}`}
         </p>
       </div>
       <div style={{ textAlign: 'right', flexShrink: 0 }}>
