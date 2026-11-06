@@ -10,4 +10,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
   )
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
+// Mesmo valor que o supabase-js usa por padrão (sessões já salvas continuam valendo).
+// Explícito porque o AuthContext lê a sessão direto do storage quando está offline.
+export const AUTH_STORAGE_KEY = `sb-${new URL(supabaseUrl).hostname.split('.')[0]}-auth-token`
+
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: { storageKey: AUTH_STORAGE_KEY },
+})
