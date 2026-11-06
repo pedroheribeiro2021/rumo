@@ -1,5 +1,27 @@
 # Registro de Sessões — Rumo
 
+## 2026-11-06 — Filtros e agrupamento por dia na tela de Gastos
+
+**Objetivo:** depois de uma auditoria dos gastos da viagem de Foz contra os
+extratos, o Pedro pediu filtro na tela de gastos (não tinha nem filtro por data).
+
+**Decisões:**
+- Lista agrupada por dia, com subtotal no cabeçalho de cada dia.
+- Chips de dia sempre à vista (Todos / Antes / um por dia da viagem até hoje /
+  Depois). Dias da viagem sem gasto também aparecem: ver o dia vazio também é conferência.
+- Busca (sem acento) e "Filtros" recolhível com categoria, quem pagou e "sem divisão".
+- Filtros ficam na URL (`?dia=&categoria=&pagou=&semdivisao=1&q=`).
+- O **acerto de contas não é filtrado**: um saldo recortado por filtro seria falso.
+- Lógica em `web/src/lib/expenseFilters.ts` (função pura + testes, ADR 0008).
+- Data padrão de um gasto novo passou a usar o dia local (`todayLocalISO`),
+  pois `toISOString()` jogava gasto lançado depois das 21h pro dia seguinte.
+
+**Alterações (branch `feat/filtros-gastos`):** `lib/expenseFilters.ts` (+testes),
+`components/ExpenseFilterBar.tsx` (+testes), `lib/format.ts` (`todayLocalISO`,
+`formatDayWithWeekday`), `pages/ExpensesPage.tsx`.
+
+**Verificação:** lint, 50 testes e build ok. Não validado no navegador com login real.
+
 ## 2026-10-31 — Dados disponíveis offline (cache persistido)
 
 **Objetivo:** o Pedro, em viagem, relatou que sem internet não conseguia
