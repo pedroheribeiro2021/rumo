@@ -20,6 +20,7 @@ import { fetchFxRate } from '../lib/fx'
 import { formatDayWithWeekday, formatMoney as money, todayLocalISO } from '../lib/format'
 import { buildDayOptions, filterExpenses, filtersFromParams, filtersToParams, groupExpensesByDay, hasActiveFilters, type ExpenseFilters } from '../lib/expenseFilters'
 import { ExpenseFilterBar } from '../components/ExpenseFilterBar'
+import { PAYMENT_METHODS, getLastPaymentMethod, paymentMethodLabel, setLastPaymentMethod, type PaymentMethod } from '../lib/paymentMethods'
 import { dequeueExpense } from '../lib/offlineQueue'
 import { Button, Card, CurrencySelect, EmptyState, Fab, Input, LoadingState, Modal, OfflineBanner, StatusChip } from '../components/ui'
 
@@ -48,6 +49,8 @@ export function ExpensesPage() {
   const [fxLoading, setFxLoading] = useState(false)
   const [spentOn, setSpentOn] = useState(() => todayLocalISO())
   const [paidBy, setPaidBy] = useState<string | null>(null)
+  // null só ao editar gasto antigo sem forma informada — não inventa um valor pra ele
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(() => getLastPaymentMethod())
   const [splitMode, setSplitMode] = useState<'none' | 'equal' | 'custom'>('none')
   const [customShares, setCustomShares] = useState<Record<string, string>>({})
   const [submitError, setSubmitError] = useState('')
@@ -105,6 +108,7 @@ export function ExpensesPage() {
     setFxRate(1)
     setSpentOn(todayLocalISO())
     setPaidBy(null)
+    setPaymentMethod(getLastPaymentMethod())
     setSplitMode('none')
     setCustomShares({})
     setSubmitError('')
@@ -122,6 +126,7 @@ export function ExpensesPage() {
     setFxRate(expense.fx_to_base)
     setSpentOn(expense.spent_on)
     setPaidBy(expense.paid_by)
+    setPaymentMethod((expense.payment_method as PaymentMethod | null) ?? null)
     if (expense.splits.length === 0) {
       setSplitMode('none')
       setCustomShares({})
@@ -172,6 +177,7 @@ export function ExpensesPage() {
         currency: effectiveCurrency,
         fxToBase: fxRate,
         paidBy: effectivePaidBy,
+        paymentMethod,
         spentOn,
         splits,
       })
@@ -184,10 +190,12 @@ export function ExpensesPage() {
         currency: effectiveCurrency,
         fxToBase: fxRate,
         paidBy: effectivePaidBy,
+        paymentMethod,
         spentOn,
         splits,
       })
     }
+    if (paymentMethod) setLastPaymentMethod(paymentMethod)
     resetForm()
   }
 
@@ -328,6 +336,32 @@ export function ExpensesPage() {
                 }}
               >
                 {c.name}
+              </button>
+            ))}
+          </div>
+
+          <div role="radiogroup" aria-label="Forma de pagamento" style={{ display: 'flex', gap: 6 }}>
+            {PAYMENT_METHODS.map((p) => (
+              <button
+                key={p.value}
+                type="button"
+                role="radio"
+                aria-checked={paymentMethod === p.value}
+                onClick={() => setPaymentMethod(p.value)}
+                style={{
+                  flex: 1,
+                  borderRadius: 'var(--radius-full)',
+                  border: 'none',
+                  padding: '8px 12px',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  fontFamily: 'var(--font-sans)',
+                  cursor: 'pointer',
+                  background: paymentMethod === p.value ? 'var(--color-brand)' : 'var(--color-surface-sunken)',
+                  color: paymentMethod === p.value ? '#fff' : 'var(--color-text-secondary)',
+                }}
+              >
+                {p.label}
               </button>
             ))}
           </div>
@@ -473,6 +507,7 @@ function ExpenseRow({
         </p>
         <p style={{ margin: '2px 0 0', fontSize: 'var(--text-body-sm)', color: 'var(--color-text-secondary)' }}>
           pago por {payerName ?? '—'}
+          {paymentMethodLabel(expense.payment_method) && ` · ${paymentMethodLabel(expense.payment_method)}`}
         </p>
       </div>
       <div style={{ textAlign: 'right', flexShrink: 0 }}>

@@ -20,7 +20,18 @@ extratos, o Pedro pediu filtro na tela de gastos (não tinha nem filtro por data
 `components/ExpenseFilterBar.tsx` (+testes), `lib/format.ts` (`todayLocalISO`,
 `formatDayWithWeekday`), `pages/ExpensesPage.tsx`.
 
-**Verificação:** lint, 50 testes e build ok. Não validado no navegador com login real.
+Segundo commit: **forma de pagamento** (cartão / Pix / espécie) no gasto.
+Seletor visível no formulário (fora de "mais opções"), vem com a última forma
+usada (`localStorage`), então não custa toque extra. Aparece na linha do gasto
+e como filtro "Pagamento" (inclui "Não informado" para gastos antigos).
+Coluna `payment_method` nula = não informado — sem chute retroativo.
+Arquivos: `lib/paymentMethods.ts`, `supabase/schema.sql`, `database.types.ts`,
+`offlineQueue.ts` (campo opcional, itens antigos da fila seguem válidos),
+`hooks/useExpenses.ts`.
+
+**Verificação:** lint, 51 testes e build ok. Não validado no navegador com login real.
+**Migração não aplicada**: a aplicação no banco de produção foi bloqueada nesta
+sessão — ver Pendencias.md (aplicar antes do merge).
 
 ## 2026-10-31 — Dados disponíveis offline (cache persistido)
 

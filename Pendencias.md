@@ -7,9 +7,13 @@
   divididos, teve que ser modelado trocando o "pago por" dos gastos pra Bruna.
   Precisa de tabela própria (`rumo_settlements`?) que entre no `computeBalances`
   sem inflar o total de gastos.
-- **Campo "forma de pagamento" no gasto** (cartão / Pix / espécie), com o último
-  valor usado como padrão e como filtro. Facilita a conferência com o extrato
-  e é pré-requisito pra exportar os gastos de cartão pro ZeroSheet.
+- **Aplicar a migração `payment_method` no Supabase ANTES de fazer merge da
+  branch `feat/filtros-gastos`.** O front novo grava `payment_method` em todo
+  gasto; sem a coluna, o insert falha. SQL (aditivo, não quebra o app atual):
+  `alter table rumo_expenses add column if not exists payment_method text
+  check (payment_method in ('card', 'pix', 'cash'));`
+  Depois, opcional: preencher a forma de pagamento dos gastos da viagem de Foz
+  conferidos na auditoria de 06/11.
 - **`new Date().toISOString().slice(0, 10)` ainda em `TripDetailPage` e
   `PriceWatchDetailPage`.** É UTC: depois das 21h em Brasília vira o dia
   seguinte. Na tela de gastos já foi trocado por `todayLocalISO()`.

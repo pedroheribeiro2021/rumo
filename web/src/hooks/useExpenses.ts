@@ -19,6 +19,7 @@ function pendingToDisplay(p: PendingExpense): ExpenseWithSplits {
     currency: p.currency,
     fx_to_base: p.fxToBase,
     paid_by: p.paidBy,
+    payment_method: p.paymentMethod ?? null,
     created_by: p.createdBy ?? null,
     created_at: p.queuedAt,
     splits: p.splits.map((s) => ({
@@ -75,6 +76,7 @@ interface CreateExpenseInput {
   currency: string
   fxToBase: number
   paidBy: string
+  paymentMethod: string | null
   spentOn: string
   splits: SplitInput[]
 }
@@ -90,6 +92,7 @@ async function insertExpenseOnServer(input: CreateExpenseInput, createdBy: strin
       currency: input.currency,
       fx_to_base: input.fxToBase,
       paid_by: input.paidBy,
+      payment_method: input.paymentMethod,
       spent_on: input.spentOn,
       created_by: createdBy,
     })
@@ -142,6 +145,7 @@ export function useCreateExpense(tripId: string) {
           currency: input.currency,
           fxToBase: input.fxToBase,
           paidBy: input.paidBy,
+          paymentMethod: input.paymentMethod,
           spentOn: input.spentOn,
           createdBy: session?.user.id,
           splits: input.splits,
@@ -176,6 +180,7 @@ export function useSyncPendingExpenses(tripId: string | undefined) {
               currency: pending.currency,
               fxToBase: pending.fxToBase,
               paidBy: pending.paidBy,
+              paymentMethod: pending.paymentMethod ?? null,
               spentOn: pending.spentOn,
               splits: pending.splits,
             },
@@ -210,6 +215,7 @@ export function useUpdateExpense(tripId: string) {
           currency: input.currency,
           fx_to_base: input.fxToBase,
           paid_by: input.paidBy,
+          payment_method: input.paymentMethod,
           spent_on: input.spentOn,
         })
         .eq('id', input.id)

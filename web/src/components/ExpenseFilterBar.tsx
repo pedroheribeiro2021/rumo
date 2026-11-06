@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Tabs } from './ui'
 import { formatDateShort } from '../lib/format'
+import { PAYMENT_METHODS } from '../lib/paymentMethods'
 import { EMPTY_FILTERS, hasActiveFilters, type DayOption, type ExpenseFilters } from '../lib/expenseFilters'
 
 interface Props {
@@ -23,7 +24,7 @@ function dayLabel(o: DayOption): string {
  * 1 toque); o resto fica atrás de "Filtros" pra não empurrar a lista pra baixo no celular.
  */
 export function ExpenseFilterBar({ filters, onChange, dayOptions, categories, members }: Props) {
-  const secondaryActive = !!filters.category || !!filters.paidBy || filters.unsplitOnly || filters.query.trim() !== ''
+  const secondaryActive = !!filters.category || !!filters.paidBy || !!filters.payment || filters.unsplitOnly || filters.query.trim() !== ''
   const [expanded, setExpanded] = useState(secondaryActive)
   const set = (patch: Partial<ExpenseFilters>) => onChange({ ...filters, ...patch })
 
@@ -82,6 +83,13 @@ export function ExpenseFilterBar({ filters, onChange, dayOptions, categories, me
             <Chip active={filters.unsplitOnly} onClick={() => set({ unsplitOnly: !filters.unsplitOnly })}>
               Sem divisão
             </Chip>
+          </ChipRow>
+          <ChipRow label="Pagamento">
+            {[...PAYMENT_METHODS, { value: 'none', label: 'Não informado' }].map((p) => (
+              <Chip key={p.value} active={filters.payment === p.value} onClick={() => set({ payment: filters.payment === p.value ? null : p.value })}>
+                {p.label}
+              </Chip>
+            ))}
           </ChipRow>
         </div>
       )}

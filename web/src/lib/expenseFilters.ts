@@ -6,6 +6,7 @@ export interface FilterableExpense {
   description: string | null
   category: string | null
   paid_by: string | null
+  payment_method?: string | null
   amount: number
   fx_to_base: number
   splits: { member_id: string }[]
@@ -22,11 +23,13 @@ export interface ExpenseFilters {
   day: DayFilter
   category: string | null
   paidBy: string | null
+  // 'none' = sem forma informada (gastos lançados antes do campo existir)
+  payment: string | null
   unsplitOnly: boolean
   query: string
 }
 
-export const EMPTY_FILTERS: ExpenseFilters = { day: 'all', category: null, paidBy: null, unsplitOnly: false, query: '' }
+export const EMPTY_FILTERS: ExpenseFilters = { day: 'all', category: null, paidBy: null, payment: null, unsplitOnly: false, query: '' }
 
 export interface TripRange {
   start_date: string | null
@@ -52,6 +55,7 @@ export function filterExpenses<T extends FilterableExpense>(expenses: T[], filte
     if (!matchesDay(e.spent_on, filters.day, range)) return false
     if (filters.category && (e.category ?? 'outros') !== filters.category) return false
     if (filters.paidBy && e.paid_by !== filters.paidBy) return false
+    if (filters.payment && (e.payment_method ?? 'none') !== filters.payment) return false
     if (filters.unsplitOnly && e.splits.length > 0) return false
     if (q) {
       const haystack = normalize(`${e.description ?? ''} ${e.category ?? ''}`)
@@ -62,7 +66,7 @@ export function filterExpenses<T extends FilterableExpense>(expenses: T[], filte
 }
 
 export function hasActiveFilters(filters: ExpenseFilters): boolean {
-  return filters.day !== 'all' || !!filters.category || !!filters.paidBy || filters.unsplitOnly || filters.query.trim() !== ''
+  return filters.day !== 'all' || !!filters.category || !!filters.paidBy || !!filters.payment || filters.unsplitOnly || filters.query.trim() !== ''
 }
 
 export interface DayGroup<T> {
@@ -137,6 +141,7 @@ export function filtersFromParams(params: URLSearchParams): ExpenseFilters {
     day: params.get('dia') || 'all',
     category: params.get('categoria') || null,
     paidBy: params.get('pagou') || null,
+    payment: params.get('pagamento') || null,
     unsplitOnly: params.get('semdivisao') === '1',
     query: params.get('q') ?? '',
   }
@@ -147,6 +152,7 @@ export function filtersToParams(filters: ExpenseFilters): URLSearchParams {
   if (filters.day !== 'all') p.set('dia', filters.day)
   if (filters.category) p.set('categoria', filters.category)
   if (filters.paidBy) p.set('pagou', filters.paidBy)
+  if (filters.payment) p.set('pagamento', filters.payment)
   if (filters.unsplitOnly) p.set('semdivisao', '1')
   if (filters.query) p.set('q', filters.query)
   return p

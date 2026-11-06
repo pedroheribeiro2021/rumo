@@ -62,6 +62,12 @@ describe('filterExpenses', () => {
     expect(out.map((e) => e.paid_by)).toEqual([BRUNA])
   })
 
+  it('filtra por forma de pagamento, e "none" pega os não informados', () => {
+    const list = [exp({ payment_method: 'card' }), exp({ payment_method: 'pix' }), exp({ payment_method: null }), exp()]
+    expect(filterExpenses(list, { ...EMPTY_FILTERS, payment: 'pix' }, range)).toHaveLength(1)
+    expect(filterExpenses(list, { ...EMPTY_FILTERS, payment: 'none' }, range)).toHaveLength(2)
+  })
+
   it('"sem divisão" mostra só gastos sem split', () => {
     const list = [exp(), exp({ description: 'Corta vento', splits: [] })]
     const out = filterExpenses(list, { ...EMPTY_FILTERS, unsplitOnly: true }, range)
@@ -134,7 +140,7 @@ describe('addDays', () => {
 
 describe('filtros na URL', () => {
   it('ida e volta preserva os filtros', () => {
-    const f = { day: '2026-11-01', category: 'transporte', paidBy: PEDRO, unsplitOnly: true, query: 'uber' }
+    const f = { day: '2026-11-01', category: 'transporte', paidBy: PEDRO, payment: 'card', unsplitOnly: true, query: 'uber' }
     expect(filtersFromParams(filtersToParams(f))).toEqual(f)
   })
 
