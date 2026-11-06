@@ -30,8 +30,9 @@ Arquivos: `lib/paymentMethods.ts`, `supabase/schema.sql`, `database.types.ts`,
 `hooks/useExpenses.ts`.
 
 **Verificação:** lint, 51 testes e build ok. Não validado no navegador com login real.
-**Migração não aplicada**: a aplicação no banco de produção foi bloqueada nesta
-sessão — ver Pendencias.md (aplicar antes do merge).
+**Migração aplicada** no Supabase em 2026-11-06 (`rumo_expenses_payment_method`),
+a pedido do Pedro, antes do merge. Gastos da viagem de Foz conferidos contra os
+extratos foram preenchidos (22 cartão, 4 Pix, 1 espécie); o resto segue nulo.
 
 ## 2026-10-31 — Dados disponíveis offline (cache persistido)
 
