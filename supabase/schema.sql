@@ -85,6 +85,11 @@ create table if not exists rumo_expenses (
   created_at timestamptz default now()
 );
 
+-- Forma de pagamento (cartão / Pix / espécie). Nulo = não informado: gastos
+-- lançados antes do campo existir ficam assim, sem chute retroativo.
+alter table rumo_expenses add column if not exists payment_method text
+  check (payment_method in ('card', 'pix', 'cash'));
+
 -- Divisão de cada gasto entre membros
 create table if not exists rumo_expense_splits (
   id uuid primary key default gen_random_uuid(),

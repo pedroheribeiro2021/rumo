@@ -911,6 +911,7 @@ export type Database = {
           fx_to_base: number
           id: string
           paid_by: string | null
+          payment_method: string | null
           spent_on: string
           trip_id: string
         }
@@ -924,6 +925,7 @@ export type Database = {
           fx_to_base?: number
           id?: string
           paid_by?: string | null
+          payment_method?: string | null
           spent_on?: string
           trip_id: string
         }
@@ -937,6 +939,7 @@ export type Database = {
           fx_to_base?: number
           id?: string
           paid_by?: string | null
+          payment_method?: string | null
           spent_on?: string
           trip_id?: string
         }
